@@ -12,7 +12,7 @@ const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'PLACEHOLDER'
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId={CLIENT_ID}>
-      <BrowserRouter basename="/cw-cycle-count">
+      <BrowserRouter basename="/cw-cycle-count-v2">
         <AuthProvider>
           <AppProvider>
             <App />
