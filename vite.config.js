@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/cw-cycle-count/',
+  base: '/cw-cycle-count-v2/',
   build: {
     outDir: 'dist',
     sourcemap: false,
