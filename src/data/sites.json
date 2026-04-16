@@ -1,0 +1,203 @@
+[
+  {
+    "id": "AMS01",
+    "name": "AMS01",
+    "city": "Amsterdam",
+    "country": "NL",
+    "region": "EMEA",
+    "subRegion": "EU-West",
+    "timezone": "Europe/Amsterdam",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending", "Receiving_Hold"],
+    "rooms": [
+      { "id": "ROOM-A", "name": "Room A — Main floor", "sections": ["Stored", "In Process", "Spares"] },
+      { "id": "ROOM-B", "name": "Room B — RMA staging", "sections": ["RMA_Pending", "Scrap_Pending"] }
+    ]
+  },
+  {
+    "id": "LHR02",
+    "name": "LHR02",
+    "city": "London",
+    "country": "GB",
+    "region": "EMEA",
+    "subRegion": "EU-West",
+    "timezone": "Europe/London",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending", "Receiving_Hold"],
+    "rooms": [
+      { "id": "ROOM-A", "name": "Room A — Main floor", "sections": ["Stored", "In Process", "Spares"] },
+      { "id": "ROOM-B", "name": "Room B — RMA staging", "sections": ["RMA_Pending", "Scrap_Pending"] }
+    ]
+  },
+  {
+    "id": "FRA03",
+    "name": "FRA03",
+    "city": "Frankfurt",
+    "country": "DE",
+    "region": "EMEA",
+    "subRegion": "EU-Central",
+    "timezone": "Europe/Berlin",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending", "Receiving_Hold"],
+    "rooms": [
+      { "id": "ROOM-A", "name": "Room A — Main floor", "sections": ["Stored", "In Process", "Spares"] },
+      { "id": "ROOM-B", "name": "Room B — RMA staging", "sections": ["RMA_Pending", "Scrap_Pending"] }
+    ]
+  },
+  {
+    "id": "MAD04",
+    "name": "MAD04",
+    "city": "Madrid",
+    "country": "ES",
+    "region": "EMEA",
+    "subRegion": "EU-South",
+    "timezone": "Europe/Madrid",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
+    "rooms": [
+      { "id": "ROOM-A", "name": "Room A — Main floor", "sections": ["Stored", "In Process", "Spares", "RMA_Pending"] }
+    ]
+  },
+  {
+    "id": "NO-OVO01",
+    "name": "NO-OVO01",
+    "city": "Oslo",
+    "country": "NO",
+    "region": "EMEA",
+    "subRegion": "EU-North",
+    "timezone": "Europe/Oslo",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending"],
+    "rooms": [
+      { "id": "ROOM-A", "name": "Room A — Main floor", "sections": ["Stored", "In Process", "Spares"] }
+    ]
+  },
+  {
+    "id": "SE-FAN01",
+    "name": "SE-FAN01",
+    "city": "Falun",
+    "country": "SE",
+    "region": "EMEA",
+    "subRegion": "EU-North",
+    "timezone": "Europe/Stockholm",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending", "Receiving_Hold"],
+    "rooms": [
+      { "id": "HALL-1", "name": "Hall 1 — Primary", "sections": ["Stored", "In Process"] },
+      { "id": "HALL-2", "name": "Hall 2 — Spares & RMA", "sections": ["Spares", "RMA_Pending", "Scrap_Pending"] }
+    ]
+  },
+  {
+    "id": "SE-FAN02",
+    "name": "SE-FAN02",
+    "city": "Falun",
+    "country": "SE",
+    "region": "EMEA",
+    "subRegion": "EU-North",
+    "timezone": "Europe/Stockholm",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
+    "rooms": [
+      { "id": "HALL-1", "name": "Hall 1", "sections": ["Stored", "In Process", "Spares", "RMA_Pending"] }
+    ]
+  },
+  {
+    "id": "GB-LHR01",
+    "name": "GB-LHR01",
+    "city": "London",
+    "country": "GB",
+    "region": "EMEA",
+    "subRegion": "EU-West",
+    "timezone": "Europe/London",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor"],
+    "rooms": [
+      { "id": "ROOM-A", "name": "Room A", "sections": ["Stored", "In Process", "Spares"] }
+    ]
+  },
+  {
+    "id": "ES-MAD01",
+    "name": "ES-MAD01",
+    "city": "Madrid",
+    "country": "ES",
+    "region": "EMEA",
+    "subRegion": "EU-South",
+    "timezone": "Europe/Madrid",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
+    "rooms": [
+      { "id": "ROOM-A", "name": "Room A", "sections": ["Stored", "In Process", "Spares", "RMA_Pending"] }
+    ]
+  },
+  {
+    "id": "IT-MIL01",
+    "name": "IT-MIL01",
+    "city": "Milan",
+    "country": "IT",
+    "region": "EMEA",
+    "subRegion": "EU-South",
+    "timezone": "Europe/Rome",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
+    "rooms": [
+      { "id": "ROOM-A", "name": "Room A", "sections": ["Stored", "In Process", "Spares"] }
+    ]
+  },
+  {
+    "id": "US-EWR01",
+    "name": "US-EWR01",
+    "city": "Newark",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US-East",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending"],
+    "rooms": [
+      { "id": "FLOOR-1", "name": "Floor 1", "sections": ["Stored", "In Process", "Spares"] }
+    ]
+  },
+  {
+    "id": "US-ORD01",
+    "name": "US-ORD01",
+    "city": "Chicago",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US-Central",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor"],
+    "rooms": [
+      { "id": "FLOOR-1", "name": "Floor 1", "sections": ["Stored", "In Process"] },
+      { "id": "FLOOR-2", "name": "Floor 2", "sections": ["Spares", "RMA_Pending"] }
+    ]
+  },
+  {
+    "id": "US-LAX01",
+    "name": "US-LAX01",
+    "city": "Los Angeles",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US-West",
+    "timezone": "America/Los_Angeles",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
+    "rooms": [
+      { "id": "FLOOR-1", "name": "Floor 1", "sections": ["Stored", "In Process", "Spares", "RMA_Pending"] }
+    ]
+  },
+  {
+    "id": "US-DFW01",
+    "name": "US-DFW01",
+    "city": "Dallas",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US-Central",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
+    "rooms": [
+      { "id": "FLOOR-1", "name": "Floor 1", "sections": ["Stored", "In Process", "Spares"] }
+    ]
+  }
+]

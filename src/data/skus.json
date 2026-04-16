@@ -1,0 +1,371 @@
+[
+  {
+    "cwpn": "010010001",
+    "nsItemId": "1062833700",
+    "nsDesc": "",
+    "desc": "GB200 NVL72 rack unit",
+    "category": "01",
+    "typeName": "Compute \u2014 GB200",
+    "serialTracked": true,
+    "status": "active",
+    "flagged": false,
+    "inventory": {
+      "AMS01": {
+        "Stored": 0,
+        "In Process": 2,
+        "Spares": 4,
+        "RMA_Pending": 1,
+        "Scrap_Pending": 0
+      },
+      "LHR02": {
+        "Stored": 0,
+        "In Process": 1,
+        "Spares": 3,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "FRA03": {
+        "Stored": 0,
+        "In Process": 0,
+        "Spares": 2,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "MAD04": {
+        "Stored": 0,
+        "In Process": 1,
+        "Spares": 2,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      }
+    }
+  },
+  {
+    "cwpn": "010020001",
+    "nsItemId": "1062833701",
+    "nsDesc": "",
+    "desc": "GB300 NVL72 rack unit",
+    "category": "01",
+    "typeName": "Compute \u2014 GB300",
+    "serialTracked": true,
+    "status": "active",
+    "flagged": false,
+    "inventory": {
+      "AMS01": {
+        "Stored": 0,
+        "In Process": 1,
+        "Spares": 3,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 1
+      },
+      "LHR02": {
+        "Stored": 0,
+        "In Process": 0,
+        "Spares": 2,
+        "RMA_Pending": 1,
+        "Scrap_Pending": 0
+      },
+      "FRA03": {
+        "Stored": 0,
+        "In Process": 1,
+        "Spares": 2,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "MAD04": {
+        "Stored": 0,
+        "In Process": 0,
+        "Spares": 1,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      }
+    }
+  },
+  {
+    "cwpn": "030010001",
+    "nsItemId": "1834560280",
+    "nsDesc": "",
+    "desc": "100G QSFP28 SR4 optical module",
+    "category": "03",
+    "typeName": "Optics \u2014 100G SR4",
+    "serialTracked": false,
+    "status": "active",
+    "flagged": true,
+    "inventory": {
+      "AMS01": {
+        "Stored": 8,
+        "In Process": 24,
+        "Spares": 6,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "LHR02": {
+        "Stored": 6,
+        "In Process": 18,
+        "Spares": 4,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "FRA03": {
+        "Stored": 4,
+        "In Process": 12,
+        "Spares": 4,
+        "RMA_Pending": 2,
+        "Scrap_Pending": 0
+      },
+      "MAD04": {
+        "Stored": 4,
+        "In Process": 8,
+        "Spares": 2,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      }
+    }
+  },
+  {
+    "cwpn": "030020001",
+    "nsItemId": "1834560282",
+    "nsDesc": "",
+    "desc": "400G QSFP-DD DR4 optical module",
+    "category": "03",
+    "typeName": "Optics \u2014 400G DR4",
+    "serialTracked": false,
+    "status": "active",
+    "flagged": true,
+    "inventory": {
+      "AMS01": {
+        "Stored": 2,
+        "In Process": 4,
+        "Spares": 6,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "LHR02": {
+        "Stored": 2,
+        "In Process": 4,
+        "Spares": 4,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "FRA03": {
+        "Stored": 2,
+        "In Process": 2,
+        "Spares": 4,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "MAD04": {
+        "Stored": 0,
+        "In Process": 2,
+        "Spares": 2,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      }
+    }
+  },
+  {
+    "cwpn": "030030001",
+    "nsItemId": "1834560290",
+    "nsDesc": "",
+    "desc": "10G SFP+ LR single-mode 10km",
+    "category": "03",
+    "typeName": "Optics \u2014 10G LR",
+    "serialTracked": false,
+    "status": "active",
+    "flagged": true,
+    "inventory": {
+      "AMS01": {
+        "Stored": 18,
+        "In Process": 6,
+        "Spares": 4,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "LHR02": {
+        "Stored": 12,
+        "In Process": 6,
+        "Spares": 4,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "FRA03": {
+        "Stored": 10,
+        "In Process": 4,
+        "Spares": 2,
+        "RMA_Pending": 1,
+        "Scrap_Pending": 0
+      },
+      "MAD04": {
+        "Stored": 8,
+        "In Process": 4,
+        "Spares": 2,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      }
+    }
+  },
+  {
+    "cwpn": "040010001",
+    "nsItemId": "1834560292",
+    "nsDesc": "",
+    "desc": "10G SFP+ DAC cable 3m",
+    "category": "04",
+    "typeName": "Cable \u2014 DAC 10G 3m",
+    "serialTracked": false,
+    "status": "active",
+    "flagged": true,
+    "inventory": {
+      "AMS01": {
+        "Stored": 40,
+        "In Process": 20,
+        "Spares": 0,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "LHR02": {
+        "Stored": 30,
+        "In Process": 15,
+        "Spares": 0,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "FRA03": {
+        "Stored": 25,
+        "In Process": 10,
+        "Spares": 0,
+        "RMA_Pending": 2,
+        "Scrap_Pending": 0
+      },
+      "MAD04": {
+        "Stored": 20,
+        "In Process": 10,
+        "Spares": 0,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      }
+    }
+  },
+  {
+    "cwpn": "040020001",
+    "nsItemId": "1834560293",
+    "nsDesc": "",
+    "desc": "AOC 8x LC 100G 10m",
+    "category": "04",
+    "typeName": "Cable \u2014 AOC 100G",
+    "serialTracked": false,
+    "status": "active",
+    "flagged": true,
+    "inventory": {
+      "AMS01": {
+        "Stored": 4,
+        "In Process": 12,
+        "Spares": 0,
+        "RMA_Pending": 2,
+        "Scrap_Pending": 0
+      },
+      "LHR02": {
+        "Stored": 4,
+        "In Process": 8,
+        "Spares": 0,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "FRA03": {
+        "Stored": 2,
+        "In Process": 6,
+        "Spares": 0,
+        "RMA_Pending": 1,
+        "Scrap_Pending": 0
+      },
+      "MAD04": {
+        "Stored": 2,
+        "In Process": 4,
+        "Spares": 0,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      }
+    }
+  },
+  {
+    "cwpn": "050010001",
+    "nsItemId": "1834560298",
+    "nsDesc": "",
+    "desc": "NVMe SSD 3.84TB U.2 enterprise",
+    "category": "05",
+    "typeName": "Storage \u2014 NVMe U.2",
+    "serialTracked": false,
+    "status": "active",
+    "flagged": true,
+    "inventory": {
+      "AMS01": {
+        "Stored": 22,
+        "In Process": 10,
+        "Spares": 5,
+        "RMA_Pending": 1,
+        "Scrap_Pending": 0
+      },
+      "LHR02": {
+        "Stored": 16,
+        "In Process": 8,
+        "Spares": 4,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      },
+      "FRA03": {
+        "Stored": 12,
+        "In Process": 6,
+        "Spares": 4,
+        "RMA_Pending": 1,
+        "Scrap_Pending": 0
+      },
+      "MAD04": {
+        "Stored": 10,
+        "In Process": 4,
+        "Spares": 2,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      }
+    }
+  },
+  {
+    "cwpn": "060010001",
+    "nsItemId": "1062833750",
+    "nsDesc": "PSU 2KW",
+    "desc": "PSU 2000W redundant hotswap",
+    "category": "06",
+    "typeName": "Power \u2014 PSU 2kW",
+    "serialTracked": false,
+    "status": "active",
+    "flagged": false,
+    "inventory": {
+      "AMS01": {
+        "Stored": 14,
+        "In Process": 8,
+        "Spares": 4,
+        "RMA_Pending": 3,
+        "Scrap_Pending": 0
+      },
+      "LHR02": {
+        "Stored": 10,
+        "In Process": 6,
+        "Spares": 4,
+        "RMA_Pending": 1,
+        "Scrap_Pending": 0
+      },
+      "FRA03": {
+        "Stored": 8,
+        "In Process": 4,
+        "Spares": 2,
+        "RMA_Pending": 2,
+        "Scrap_Pending": 0
+      },
+      "MAD04": {
+        "Stored": 6,
+        "In Process": 4,
+        "Spares": 2,
+        "RMA_Pending": 0,
+        "Scrap_Pending": 0
+      }
+    }
+  }
+]
