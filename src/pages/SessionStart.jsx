@@ -1,33 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useSites } from '../hooks/useInventory'
+import { useSessionList } from '../hooks/useSession'
 import { useCreateSession, getSectionKeysForType } from '../hooks/useSession'
 
 const COUNT_TYPES = [
-  {
-    key: 'quick',
-    label: 'Quick count',
-    desc: 'Stored bins only — fast, focused on primary stock',
-    color: 'var(--cw-blue)',
-  },
-  {
-    key: 'standard',
-    label: 'Standard count',
-    desc: 'Stored + In Process + Spares — recommended for weekly cadence',
-    color: 'var(--purple)',
-  },
-  {
-    key: 'full',
-    label: 'Full count',
-    desc: 'All bins including RMA & Scrap — for audits, wall-to-wall, and monthly counts',
-    color: 'var(--red)',
-  },
-  {
-    key: 'custom',
-    label: 'Custom count',
-    desc: 'Choose specific bins, categories, or SKUs to count',
-    color: 'var(--amber)',
-  },
+  { key: 'quick',    label: 'Quick count',    desc: 'Stored bins only. Fast, focused on primary stock.',                       color: 'var(--cw-blue)' },
+  { key: 'standard', label: 'Standard count',  desc: 'Stored + In Process + Spares. Recommended for weekly cadence.',           color: 'var(--purple)' },
+  { key: 'full',     label: 'Full count',      desc: 'All bins including RMA and Scrap. For audits, wall-to-wall, and monthly.', color: 'var(--red)' },
+  { key: 'custom',   label: 'Custom count',    desc: 'Choose specific bins, categories, or SKUs to count.',                     color: 'var(--amber)' },
 ]
 
 function Toggle({ on, onToggle }) {
@@ -42,6 +23,7 @@ export default function SessionStart() {
   const navigate       = useNavigate()
   const [params]       = useSearchParams()
   const { sites }      = useSites()
+  const { sessions }   = useSessionList()
   const { create, creating } = useCreateSession()
 
   const [siteId,        setSiteId]        = useState(params.get('site') || '')
@@ -52,13 +34,17 @@ export default function SessionStart() {
   const [scheduledDate, setScheduledDate] = useState('')
   const [customBins,    setCustomBins]    = useState([])
 
-  // Pre-select first site if only one available
   useEffect(() => {
     if (!siteId && sites.length === 1) setSiteId(sites[0].id)
   }, [sites, siteId])
 
   const selectedSite = sites.find(s => s.id === siteId)
   const siteBins = selectedSite?.bins || ['Stored', 'In Process', 'Spares', 'RMA_Pending', 'RMA_Vendor', 'Scrap_Pending', 'Receiving_Hold']
+
+  // Last count info for selected site
+  const siteSessions = sessions.filter(s => s.siteId === siteId && s.status === 'approved')
+  const lastSession = siteSessions[0]
+  const lastAccuracy = lastSession?.accuracy
 
   const sectionKeys = countType === 'custom'
     ? customBins
@@ -87,9 +73,11 @@ export default function SessionStart() {
     if (session) navigate(`/session/${session.id}`)
   }
 
+  // Group sites by region for dropdown
+  const regions = [...new Set(sites.map(s => s.region))].sort()
+
   return (
     <div className="page" style={{ maxWidth: 700 }}>
-      {/* Header */}
       <div className="flex-center gap-3 mb-6">
         <button className="btn btn-ghost btn-sm" onClick={() => navigate(-1)}>←</button>
         <div>
@@ -100,23 +88,52 @@ export default function SessionStart() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-        {/* Site selection */}
+        {/* Site dropdown */}
         <div className="card">
           <h3 className="card-section-title">Site</h3>
-          <div className="grid-2">
-            {sites.map(site => (
-              <div
-                key={site.id}
-                onClick={() => { setSiteId(site.id); setCustomBins([]) }}
-                className={`select-tile${siteId === site.id ? ' selected' : ''}`}
-              >
-                <div style={{ fontWeight: 700, fontSize: 14 }}>{site.name}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                  {site.city}, {site.country} · {site.region}
-                </div>
-              </div>
+          <select
+            className="site-select"
+            value={siteId}
+            onChange={e => { setSiteId(e.target.value); setCustomBins([]) }}
+          >
+            <option value="">Select a site...</option>
+            {regions.map(region => (
+              <optgroup key={region} label={region}>
+                {sites.filter(s => s.region === region).map(site => (
+                  <option key={site.id} value={site.id}>
+                    {site.name} - {site.city}, {site.country}
+                  </option>
+                ))}
+              </optgroup>
             ))}
-          </div>
+          </select>
+
+          {/* Last count info */}
+          {siteId && (
+            <div className="site-select-info">
+              <div className="site-select-info-item">
+                <span style={{ color: 'var(--text-muted)' }}>Last count:</span>
+                <span style={{ fontWeight: 600 }}>
+                  {lastSession
+                    ? new Date(lastSession.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                    : 'Never'}
+                </span>
+              </div>
+              <div className="site-select-info-item">
+                <span style={{ color: 'var(--text-muted)' }}>Accuracy:</span>
+                <span style={{
+                  fontWeight: 600,
+                  color: lastAccuracy >= 95 ? 'var(--green)' : lastAccuracy >= 85 ? 'var(--amber)' : lastAccuracy ? 'var(--red)' : 'var(--text-muted)',
+                }}>
+                  {lastAccuracy ? `${lastAccuracy}%` : 'N/A'}
+                </span>
+              </div>
+              <div className="site-select-info-item">
+                <span style={{ color: 'var(--text-muted)' }}>Bins:</span>
+                <span style={{ fontWeight: 600 }}>{siteBins.length}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Count type */}
@@ -145,10 +162,7 @@ export default function SessionStart() {
                     </div>
                   )}
                 </div>
-                <div style={{
-                  width: 6, height: 40, borderRadius: 3,
-                  background: type.color, flexShrink: 0,
-                }} />
+                <div style={{ width: 6, height: 40, borderRadius: 3, background: type.color, flexShrink: 0 }} />
               </div>
             ))}
           </div>
@@ -186,16 +200,8 @@ export default function SessionStart() {
           <h3 className="card-section-title">Count mode</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
-              {
-                key: 'visible',
-                label: 'Visible count',
-                desc: 'Expected quantities shown during count. Faster, good for regular checks.',
-              },
-              {
-                key: 'blind',
-                label: 'Blind count',
-                desc: 'Expected quantities hidden. Technician counts independently — unbiased results. Recommended for audits.',
-              },
+              { key: 'visible', label: 'Visible count', desc: 'Expected quantities shown during count. Faster, good for regular checks.' },
+              { key: 'blind', label: 'Blind count', desc: 'Expected quantities hidden. Technician counts independently for unbiased results. Recommended for audits.' },
             ].map(m => (
               <div
                 key={m.key}
@@ -239,13 +245,7 @@ export default function SessionStart() {
           {scheduledDate && (
             <div style={{ marginTop: 12 }}>
               <label>Start date</label>
-              <input
-                className="input"
-                type="date"
-                value={scheduledDate}
-                min={new Date().toISOString().split('T')[0]}
-                onChange={e => setScheduledDate(e.target.value)}
-              />
+              <input className="input" type="date" value={scheduledDate} min={new Date().toISOString().split('T')[0]} onChange={e => setScheduledDate(e.target.value)} />
             </div>
           )}
         </div>
@@ -279,12 +279,9 @@ export default function SessionStart() {
         <div className="card">
           <h3 className="card-section-title">Notes (optional)</h3>
           <textarea
-            className="input"
-            rows={3}
-            placeholder="e.g. Weekly surplus + daily ops check. Focus on SFP-LR variance from last session."
-            value={notes}
-            onChange={e => setNotes(e.target.value)}
-            style={{ resize: 'vertical' }}
+            className="input" rows={3}
+            placeholder="e.g. Weekly surplus check. Focus on SFP-LR variance from last session."
+            value={notes} onChange={e => setNotes(e.target.value)} style={{ resize: 'vertical' }}
           />
         </div>
 
@@ -294,16 +291,16 @@ export default function SessionStart() {
             <div style={{ fontSize: 13, opacity: .6, marginBottom: 4 }}>Session summary</div>
             <div className="session-summary-details">
               <span><strong>{selectedSite?.name || 'Select a site'}</strong></span>
-              <span style={{ opacity:.6 }}>·</span>
+              <span style={{ opacity:.6 }}>/</span>
               <span style={{ textTransform:'capitalize' }}>{countType} count</span>
-              <span style={{ opacity:.6 }}>·</span>
+              <span style={{ opacity:.6 }}>/</span>
               <span style={{ textTransform:'capitalize' }}>{mode}</span>
-              <span style={{ opacity:.6 }}>·</span>
-              <span>{collaborative ? '👥 Collaborative' : '👤 Solo'}</span>
+              <span style={{ opacity:.6 }}>/</span>
+              <span>{collaborative ? 'Collaborative' : 'Solo'}</span>
               {scheduledDate && (
                 <>
-                  <span style={{ opacity:.6 }}>·</span>
-                  <span>📅 {new Date(scheduledDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}</span>
+                  <span style={{ opacity:.6 }}>/</span>
+                  <span>{new Date(scheduledDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}</span>
                 </>
               )}
             </div>
@@ -311,16 +308,8 @@ export default function SessionStart() {
               Sections: {sectionKeys.length > 0 ? sectionKeys.map(k => k.replace(/_/g, ' ')).join(', ') : 'None selected'}
             </div>
           </div>
-          <button
-            className="btn btn-create-session"
-            onClick={handleCreate}
-            disabled={!canSubmit}
-          >
-            {creating
-              ? 'Creating session…'
-              : scheduledDate
-                ? '📅 Schedule count session'
-                : '→ Create count session'}
+          <button className="btn btn-create-session" onClick={handleCreate} disabled={!canSubmit}>
+            {creating ? 'Creating session...' : scheduledDate ? 'Schedule count session' : 'Create count session'}
           </button>
         </div>
       </div>
