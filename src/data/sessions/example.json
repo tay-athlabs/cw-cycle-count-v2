@@ -1,6 +1,6 @@
 {
-  "id": "CC-AMS01-20240401-001",
-  "siteId": "AMS01",
+  "id": "CC-NO-OVO01-20240401-001",
+  "siteId": "NO-OVO01",
   "type": "standard",
   "mode": "visible",
   "collaborative": false,
@@ -20,130 +20,39 @@
   "sections": {
     "Stored": {
       "status": "approved",
-      "claimedBy": {
-        "email": "j.bakker@coreweave.com",
-        "name": "J. Bakker"
-      },
+      "claimedBy": { "email": "j.bakker@coreweave.com", "name": "J. Bakker" },
       "items": [
-        {
-          "cwpn": "030010001",
-          "expected": 8,
-          "counted": 8,
-          "variance": 0,
-          "status": "matched"
-        },
-        {
-          "cwpn": "030030001",
-          "expected": 18,
-          "counted": 17,
-          "variance": -1,
-          "status": "variance"
-        },
-        {
-          "cwpn": "040010001",
-          "expected": 40,
-          "counted": 40,
-          "variance": 0,
-          "status": "matched"
-        },
-        {
-          "cwpn": "040020001",
-          "expected": 4,
-          "counted": 4,
-          "variance": 0,
-          "status": "matched"
-        },
-        {
-          "cwpn": "050010001",
-          "expected": 22,
-          "counted": 22,
-          "variance": 0,
-          "status": "matched"
-        },
-        {
-          "cwpn": "060010001",
-          "expected": 14,
-          "counted": 14,
-          "variance": 0,
-          "status": "matched"
-        }
+        { "cwpn": "1834560270", "expected": 65, "counted": 65, "variance": 0, "status": "matched" },
+        { "cwpn": "1834560272", "expected": 222, "counted": 220, "variance": -2, "status": "variance" },
+        { "cwpn": "1834560274", "expected": 308, "counted": 308, "variance": 0, "status": "matched" },
+        { "cwpn": "1834560276", "expected": 166, "counted": 166, "variance": 0, "status": "matched" },
+        { "cwpn": "1834560278", "expected": 124, "counted": 124, "variance": 0, "status": "matched" },
+        { "cwpn": "1834560280", "expected": 88, "counted": 88, "variance": 0, "status": "matched" }
       ]
     },
     "In Process": {
       "status": "approved",
-      "claimedBy": {
-        "email": "j.bakker@coreweave.com",
-        "name": "J. Bakker"
-      },
-      "items": [
-        {
-          "cwpn": "030010001",
-          "expected": 24,
-          "counted": 22,
-          "variance": -2,
-          "status": "variance"
-        },
-        {
-          "cwpn": "040010001",
-          "expected": 20,
-          "counted": 20,
-          "variance": 0,
-          "status": "matched"
-        },
-        {
-          "cwpn": "050010001",
-          "expected": 10,
-          "counted": 10,
-          "variance": 0,
-          "status": "matched"
-        }
-      ]
+      "claimedBy": { "email": "j.bakker@coreweave.com", "name": "J. Bakker" },
+      "items": []
     },
     "Spares": {
       "status": "approved",
-      "claimedBy": {
-        "email": "j.bakker@coreweave.com",
-        "name": "J. Bakker"
-      },
+      "claimedBy": { "email": "j.bakker@coreweave.com", "name": "J. Bakker" },
       "items": [
-        {
-          "cwpn": "010010001",
-          "expected": 4,
-          "counted": 4,
-          "variance": 0,
-          "status": "matched",
-          "serials": [
-            "SNCWGB200412",
-            "SNCWGB200413",
-            "SNCWGB200414",
-            "SNCWGB200415"
-          ]
-        },
-        {
-          "cwpn": "030020001",
-          "expected": 6,
-          "counted": 6,
-          "variance": 0,
-          "status": "matched"
-        },
-        {
-          "cwpn": "050010001",
-          "expected": 5,
-          "counted": 5,
-          "variance": 0,
-          "status": "matched"
-        }
+        { "cwpn": "10M-12FM3-PFF-APC-B-LZ", "expected": 43, "counted": 43, "variance": 0, "status": "matched" },
+        { "cwpn": "10M-12FM3-PFF-APC-B-S8-LZ", "expected": 10, "counted": 10, "variance": 0, "status": "matched" },
+        { "cwpn": "1834560282", "expected": 75, "counted": 75, "variance": 0, "status": "matched" }
       ]
     }
   },
   "summary": {
-    "totalItems": 18,
-    "matched": 14,
-    "variances": 2,
+    "totalItems": 9,
+    "matched": 8,
+    "variances": 1,
     "quarantined": 0,
-    "notCounted": 2
+    "notCounted": 0
   },
-  "notes": "SFP-LR variance under investigation. Excess optical count -2, checking RMA log.",
+  "notes": "Standard weekly count at NO-OVO01. Cable variance under investigation.",
   "scheduledDate": null,
   "startedAt": "2024-04-01T07:15:00Z",
   "duration": 147

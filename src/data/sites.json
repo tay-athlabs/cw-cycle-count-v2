@@ -1,62 +1,222 @@
 [
   {
-    "id": "AMS01",
-    "name": "AMS01",
+    "id": "CA-GAL01",
+    "name": "CA-GAL01",
+    "city": "Calgary",
+    "country": "CA",
+    "region": "CA",
+    "subRegion": "CA",
+    "timezone": "America/Edmonton",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "CA-TOR01",
+    "name": "CA-TOR01",
+    "city": "Toronto",
+    "country": "CA",
+    "region": "CA",
+    "subRegion": "CA",
+    "timezone": "America/Toronto",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "DE-FRA01",
+    "name": "DE-FRA01",
+    "city": "Frankfurt",
+    "country": "DE",
+    "region": "EMEA",
+    "subRegion": "EU-West",
+    "timezone": "Europe/Berlin",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "DK-SVL01",
+    "name": "DK-SVL01",
+    "city": "Skovlunde",
+    "country": "DK",
+    "region": "EMEA",
+    "subRegion": "EU-North",
+    "timezone": "Europe/Copenhagen",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "ES-AVQ01",
+    "name": "ES-AVQ01",
+    "city": "Sevilla",
+    "country": "ES",
+    "region": "EMEA",
+    "subRegion": "EU-South",
+    "timezone": "Europe/Madrid",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "ES-BCN01",
+    "name": "ES-BCN01",
+    "city": "Barcelona",
+    "country": "ES",
+    "region": "EMEA",
+    "subRegion": "EU-South",
+    "timezone": "Europe/Madrid",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "ES-BCN02",
+    "name": "ES-BCN02",
+    "city": "Barcelona",
+    "country": "ES",
+    "region": "EMEA",
+    "subRegion": "EU-South",
+    "timezone": "Europe/Madrid",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "ES-BCN03",
+    "name": "ES-BCN03",
+    "city": "Barcelona",
+    "country": "ES",
+    "region": "EMEA",
+    "subRegion": "EU-South",
+    "timezone": "Europe/Madrid",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "GB-CWY01",
+    "name": "GB-CWY01",
+    "city": "Crawley",
+    "country": "GB",
+    "region": "EMEA",
+    "subRegion": "EU-West",
+    "timezone": "Europe/London",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "GB-PPL01",
+    "name": "GB-PPL01",
+    "city": "Peterborough",
+    "country": "GB",
+    "region": "EMEA",
+    "subRegion": "EU-West",
+    "timezone": "Europe/London",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "GB-SLO01",
+    "name": "GB-SLO01",
+    "city": "Slough",
+    "country": "GB",
+    "region": "EMEA",
+    "subRegion": "EU-West",
+    "timezone": "Europe/London",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "NL-AMS01",
+    "name": "NL-AMS01",
     "city": "Amsterdam",
     "country": "NL",
     "region": "EMEA",
     "subRegion": "EU-West",
     "timezone": "Europe/Amsterdam",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending", "Receiving_Hold"],
-    "rooms": [
-      { "id": "ROOM-A", "name": "Room A — Main floor", "sections": ["Stored", "In Process", "Spares"] },
-      { "id": "ROOM-B", "name": "Room B — RMA staging", "sections": ["RMA_Pending", "Scrap_Pending"] }
-    ]
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
   },
   {
-    "id": "LHR02",
-    "name": "LHR02",
-    "city": "London",
-    "country": "GB",
+    "id": "NO-OSL01",
+    "name": "NO-OSL01",
+    "city": "Oslo",
+    "country": "NO",
     "region": "EMEA",
-    "subRegion": "EU-West",
-    "timezone": "Europe/London",
+    "subRegion": "EU-North",
+    "timezone": "Europe/Oslo",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending", "Receiving_Hold"],
-    "rooms": [
-      { "id": "ROOM-A", "name": "Room A — Main floor", "sections": ["Stored", "In Process", "Spares"] },
-      { "id": "ROOM-B", "name": "Room B — RMA staging", "sections": ["RMA_Pending", "Scrap_Pending"] }
-    ]
-  },
-  {
-    "id": "FRA03",
-    "name": "FRA03",
-    "city": "Frankfurt",
-    "country": "DE",
-    "region": "EMEA",
-    "subRegion": "EU-Central",
-    "timezone": "Europe/Berlin",
-    "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending", "Receiving_Hold"],
-    "rooms": [
-      { "id": "ROOM-A", "name": "Room A — Main floor", "sections": ["Stored", "In Process", "Spares"] },
-      { "id": "ROOM-B", "name": "Room B — RMA staging", "sections": ["RMA_Pending", "Scrap_Pending"] }
-    ]
-  },
-  {
-    "id": "MAD04",
-    "name": "MAD04",
-    "city": "Madrid",
-    "country": "ES",
-    "region": "EMEA",
-    "subRegion": "EU-South",
-    "timezone": "Europe/Madrid",
-    "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
-    "rooms": [
-      { "id": "ROOM-A", "name": "Room A — Main floor", "sections": ["Stored", "In Process", "Spares", "RMA_Pending"] }
-    ]
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
   },
   {
     "id": "NO-OVO01",
@@ -67,10 +227,30 @@
     "subRegion": "EU-North",
     "timezone": "Europe/Oslo",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending"],
-    "rooms": [
-      { "id": "ROOM-A", "name": "Room A — Main floor", "sections": ["Stored", "In Process", "Spares"] }
-    ]
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "SE-BMM01",
+    "name": "SE-BMM01",
+    "city": "Boden",
+    "country": "SE",
+    "region": "EMEA",
+    "subRegion": "EU-North",
+    "timezone": "Europe/Stockholm",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
   },
   {
     "id": "SE-FAN01",
@@ -81,123 +261,1162 @@
     "subRegion": "EU-North",
     "timezone": "Europe/Stockholm",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending", "Receiving_Hold"],
-    "rooms": [
-      { "id": "HALL-1", "name": "Hall 1 — Primary", "sections": ["Stored", "In Process"] },
-      { "id": "HALL-2", "name": "Hall 2 — Spares & RMA", "sections": ["Spares", "RMA_Pending", "Scrap_Pending"] }
-    ]
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
   },
   {
-    "id": "SE-FAN02",
-    "name": "SE-FAN02",
-    "city": "Falun",
+    "id": "SE-SKH01",
+    "name": "SE-SKH01",
+    "city": "Skelleftea",
     "country": "SE",
     "region": "EMEA",
     "subRegion": "EU-North",
     "timezone": "Europe/Stockholm",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
-    "rooms": [
-      { "id": "HALL-1", "name": "Hall 1", "sections": ["Stored", "In Process", "Spares", "RMA_Pending"] }
-    ]
+    "bins": [
+      "In Process",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
   },
   {
-    "id": "GB-LHR01",
-    "name": "GB-LHR01",
-    "city": "London",
-    "country": "GB",
-    "region": "EMEA",
-    "subRegion": "EU-West",
-    "timezone": "Europe/London",
+    "id": "US-AAI01",
+    "name": "US-AAI01",
+    "city": "Ann Arbor",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor"],
-    "rooms": [
-      { "id": "ROOM-A", "name": "Room A", "sections": ["Stored", "In Process", "Spares"] }
-    ]
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
   },
   {
-    "id": "ES-MAD01",
-    "name": "ES-MAD01",
-    "city": "Madrid",
-    "country": "ES",
-    "region": "EMEA",
-    "subRegion": "EU-South",
-    "timezone": "Europe/Madrid",
+    "id": "US-ARQ01",
+    "name": "US-ARQ01",
+    "city": "Albuquerque",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Denver",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
-    "rooms": [
-      { "id": "ROOM-A", "name": "Room A", "sections": ["Stored", "In Process", "Spares", "RMA_Pending"] }
-    ]
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC IV"
+    ],
+    "rooms": []
   },
   {
-    "id": "IT-MIL01",
-    "name": "IT-MIL01",
-    "city": "Milan",
-    "country": "IT",
-    "region": "EMEA",
-    "subRegion": "EU-South",
-    "timezone": "Europe/Rome",
+    "id": "US-ATL03",
+    "name": "US-ATL03",
+    "city": "Atlanta",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
-    "rooms": [
-      { "id": "ROOM-A", "name": "Room A", "sections": ["Stored", "In Process", "Spares"] }
-    ]
+    "bins": [
+      "In Process",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
   },
   {
-    "id": "US-EWR01",
-    "name": "US-EWR01",
+    "id": "US-AUS01",
+    "name": "US-AUS01",
+    "city": "Austin",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-BVI01",
+    "name": "US-BVI01",
+    "city": "Buena Vista",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC III"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-CDZ01",
+    "name": "US-CDZ01",
+    "city": "Cedar Park",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-CHI01",
+    "name": "US-CHI01",
+    "city": "",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-CHI02",
+    "name": "US-CHI02",
+    "city": "",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "",
+    "active": true,
+    "bins": [
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-CMH01",
+    "name": "US-CMH01",
+    "city": "Columbus",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC III"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-CSZ01",
+    "name": "US-CSZ01",
+    "city": "Mesa",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Phoenix",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-CSZ02",
+    "name": "US-CSZ02",
+    "city": "Mesa",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Phoenix",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-CVG01",
+    "name": "US-CVG01",
+    "city": "Covington",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-CVY01",
+    "name": "US-CVY01",
+    "city": "Covington",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC IV"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-CYL01",
+    "name": "US-CYL01",
+    "city": "Carlisle",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "In Process",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-DAL01",
+    "name": "US-DAL01",
+    "city": "",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-DEN01",
+    "name": "US-DEN01",
+    "city": "",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-DGV01",
+    "name": "US-DGV01",
+    "city": "Douglasville",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-DNN01",
+    "name": "US-DNN01",
+    "city": "Dalton",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "In Process",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-DTN01",
+    "name": "US-DTN01",
+    "city": "Denton",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC V",
+      "CCAC VI",
+      "CCAC VII"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-EVI01",
+    "name": "US-EVI01",
+    "city": "Evansville",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-EWS01",
+    "name": "US-EWS01",
     "city": "Newark",
     "country": "US",
     "region": "US",
-    "subRegion": "US-East",
+    "subRegion": "US",
     "timezone": "America/New_York",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor", "Scrap_Pending"],
-    "rooms": [
-      { "id": "FLOOR-1", "name": "Floor 1", "sections": ["Stored", "In Process", "Spares"] }
-    ]
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC III"
+    ],
+    "rooms": []
   },
   {
-    "id": "US-ORD01",
-    "name": "US-ORD01",
-    "city": "Chicago",
+    "id": "US-HIO01",
+    "name": "US-HIO01",
+    "city": "Hillsboro",
     "country": "US",
     "region": "US",
-    "subRegion": "US-Central",
+    "subRegion": "US",
+    "timezone": "America/Los_Angeles",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-HIO02",
+    "name": "US-HIO02",
+    "city": "Hillsboro",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Los_Angeles",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-HIO03",
+    "name": "US-HIO03",
+    "city": "Hillsboro",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Los_Angeles",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-HIO04",
+    "name": "US-HIO04",
+    "city": "",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-HMN01",
+    "name": "US-HMN01",
+    "city": "Hammond",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
     "timezone": "America/Chicago",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending", "RMA_Vendor"],
-    "rooms": [
-      { "id": "FLOOR-1", "name": "Floor 1", "sections": ["Stored", "In Process"] },
-      { "id": "FLOOR-2", "name": "Floor 2", "sections": ["Spares", "RMA_Pending"] }
-    ]
+    "bins": [
+      "RMA_Pending",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-HOU01",
+    "name": "US-HOU01",
+    "city": "",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-LAS01",
+    "name": "US-LAS01",
+    "city": "Las Vegas",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Los_Angeles",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Receiving_Hold",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-LAS02",
+    "name": "US-LAS02",
+    "city": "Las Vegas",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Los_Angeles",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-LAS03",
+    "name": "US-LAS03",
+    "city": "Las Vegas",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Los_Angeles",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
   },
   {
     "id": "US-LAX01",
     "name": "US-LAX01",
-    "city": "Los Angeles",
+    "city": "",
     "country": "US",
     "region": "US",
-    "subRegion": "US-West",
-    "timezone": "America/Los_Angeles",
+    "subRegion": "US",
+    "timezone": "",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
-    "rooms": [
-      { "id": "FLOOR-1", "name": "Floor 1", "sections": ["Stored", "In Process", "Spares", "RMA_Pending"] }
-    ]
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
   },
   {
-    "id": "US-DFW01",
-    "name": "US-DFW01",
-    "city": "Dallas",
+    "id": "US-LBB01",
+    "name": "US-LBB01",
+    "city": "Lubbock",
     "country": "US",
     "region": "US",
-    "subRegion": "US-Central",
+    "subRegion": "US",
     "timezone": "America/Chicago",
     "active": true,
-    "bins": ["Stored", "In Process", "Spares", "RMA_Pending"],
-    "rooms": [
-      { "id": "FLOOR-1", "name": "Floor 1", "sections": ["Stored", "In Process", "Spares"] }
-    ]
+    "bins": [
+      "In Process",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-LHS01",
+    "name": "US-LHS01",
+    "city": "Lehigh",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC III"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-LNB01",
+    "name": "US-LNB01",
+    "city": "Lebanon",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-LOE01",
+    "name": "US-LOE01",
+    "city": "Louisville",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-LYF01",
+    "name": "US-LYF01",
+    "city": "Lafayette",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-LZL01",
+    "name": "US-LZL01",
+    "city": "Hazel",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-MKO01",
+    "name": "US-MKO01",
+    "city": "Muskogee",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "In Process",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-MSC01",
+    "name": "US-MSC01",
+    "city": "Manassas",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC III"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-NKQ01",
+    "name": "US-NKQ01",
+    "city": "Newark",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-NNN01",
+    "name": "US-NNN01",
+    "city": "Kennesaw",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-OBG01",
+    "name": "US-OBG01",
+    "city": "Orangeburg",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC III"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-PHX01",
+    "name": "US-PHX01",
+    "city": "Phoenix",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Phoenix",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC II",
+      "CCAC III",
+      "CCAC IV"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-PLZ01",
+    "name": "US-PLZ01",
+    "city": "Plano",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC II"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-PLZ02",
+    "name": "US-PLZ02",
+    "city": "Plano",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC V"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-PPY01",
+    "name": "US-PPY01",
+    "city": "Papillion",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-QAS01",
+    "name": "US-QAS01",
+    "city": "",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-QNC01",
+    "name": "US-QNC01",
+    "city": "Quincy",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Los_Angeles",
+    "active": true,
+    "bins": [
+      "In Process",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC III"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-RIN01",
+    "name": "US-RIN01",
+    "city": "Richmond",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC III"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-RRX01",
+    "name": "US-RRX01",
+    "city": "Round Rock",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [
+      "CCAC III"
+    ],
+    "rooms": []
+  },
+  {
+    "id": "US-RTV01",
+    "name": "US-RTV01",
+    "city": "",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-SEA01",
+    "name": "US-SEA01",
+    "city": "",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-SJC01",
+    "name": "US-SJC01",
+    "city": "",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "",
+    "active": true,
+    "bins": [
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-SKY01",
+    "name": "US-SKY01",
+    "city": "Schuyler",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "In Process",
+      "Spares"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-SPK01",
+    "name": "US-SPK01",
+    "city": "Spokane",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Los_Angeles",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-SPK02",
+    "name": "US-SPK02",
+    "city": "Spokane",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Los_Angeles",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-SPK03",
+    "name": "US-SPK03",
+    "city": "Spokane",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Los_Angeles",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-SVG01",
+    "name": "US-SVG01",
+    "city": "Savage",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "RMA_Vendor",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-UYK01",
+    "name": "US-UYK01",
+    "city": "",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "",
+    "active": true,
+    "bins": [
+      "In Process",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-VO20",
+    "name": "US-VO20",
+    "city": "Ashburn",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/New_York",
+    "active": true,
+    "bins": [
+      "RMA_Pending",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-WCI01",
+    "name": "US-WCI01",
+    "city": "West Chicago",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Chicago",
+    "active": true,
+    "bins": [
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
+  },
+  {
+    "id": "US-WJQ01",
+    "name": "US-WJQ01",
+    "city": "West Jordan",
+    "country": "US",
+    "region": "US",
+    "subRegion": "US",
+    "timezone": "America/Denver",
+    "active": true,
+    "bins": [
+      "In Process",
+      "RMA_Pending",
+      "Scrap_Pending",
+      "Spares",
+      "Stored"
+    ],
+    "entities": [],
+    "rooms": []
   }
 ]
