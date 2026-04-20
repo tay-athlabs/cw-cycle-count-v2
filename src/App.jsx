@@ -14,6 +14,7 @@ import Analytics from './pages/Analytics'
 import History from './pages/History'
 import SKUMaster from './pages/SKUMaster'
 import Profile from './pages/Profile'
+import InventoryBalance from './pages/InventoryBalance'
 
 export default function App() {
   const { isAuthenticated, loading } = useAuth()
@@ -45,6 +46,7 @@ export default function App() {
               <Route path="/session/:sessionId"      element={<CountSession />} />
               <Route path="/analytics"               element={<Analytics />} />
               <Route path="/history"                 element={<History />} />
+              <Route path="/inventory"               element={<InventoryBalance />} />
               <Route path="/sku-master"              element={<SKUMaster />} />
               <Route path="/profile"                 element={<Profile />} />
             </Route>

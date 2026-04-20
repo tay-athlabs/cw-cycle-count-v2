@@ -29,6 +29,7 @@ export default function SessionStart() {
   const { create, creating } = useCreateSession()
 
   const [siteId,        setSiteId]        = useState(params.get('site') || '')
+  const [entity,        setEntity]        = useState('')
   const [countType,     setCountType]     = useState(COUNT_TYPE.QUICK)
   const [mode,          setMode]          = useState(COUNT_MODE.VISIBLE)
   const [collaborative, setCollaborative] = useState(false)
@@ -67,6 +68,7 @@ export default function SessionStart() {
       mode,
       collaborative,
       notes,
+      entity: entity || null,
       scheduledDate: scheduledDate || null,
       customBins: countType === COUNT_TYPE.CUSTOM ? customBins : null,
       siteBins,
@@ -94,7 +96,7 @@ export default function SessionStart() {
           <select
             className="site-select"
             value={siteId}
-            onChange={e => { setSiteId(e.target.value); setCustomBins([]) }}
+            onChange={e => { setSiteId(e.target.value); setCustomBins([]); setEntity('') }}
           >
             <option value="">Select a site...</option>
             {regions.map(region => (
@@ -134,6 +136,29 @@ export default function SessionStart() {
             </div>
           )}
         </div>
+
+        {/* Entity selector (only shown if site has multiple entities) */}
+        {selectedSite?.entities?.length > 0 && (
+          <div className="card">
+            <h3 className="card-section-title">Legal entity (optional)</h3>
+            <select
+              className="site-select"
+              value={entity}
+              onChange={e => setEntity(e.target.value)}
+            >
+              <option value="">All entities</option>
+              {selectedSite.entities.map(ent => (
+                <option key={ent} value={ent}>{ent}</option>
+              ))}
+            </select>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
+              {entity
+                ? `Count will be scoped to items under ${entity} at ${selectedSite.name}`
+                : `Count will include items from all ${selectedSite.entities.length} entities at this site`
+              }
+            </div>
+          </div>
+        )}
 
         {/* Count type */}
         <div className="card">
@@ -296,6 +321,12 @@ export default function SessionStart() {
               <span style={{ textTransform:'capitalize' }}>{mode}</span>
               <span style={{ opacity:.6 }}>/</span>
               <span>{collaborative ? 'Collaborative' : 'Solo'}</span>
+              {entity && (
+                <>
+                  <span style={{ opacity:.6 }}>/</span>
+                  <span>{entity}</span>
+                </>
+              )}
               {scheduledDate && (
                 <>
                   <span style={{ opacity:.6 }}>/</span>
