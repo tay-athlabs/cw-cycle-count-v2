@@ -1,14 +1,15 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSessionList } from '../hooks/useSession'
 import { SessionStatus, AccuracyBadge } from '../components/Badge'
-
-const ROLE_LABELS = {
-  ics: 'Inventory Control Specialist',
-  manager: 'Inventory Manager',
-  admin: 'Administrator',
-}
+import {
+  ROLE_LABELS,
+  ACTIVE_STATUSES,
+  SESSION_STATUS,
+  COUNT_MODE,
+  ACCURACY,
+} from '../constants'
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -16,20 +17,30 @@ export default function Profile() {
   const { sessions, loading } = useSessionList()
   const [tab, setTab] = useState('my-counts')
 
-  const myCounts = sessions.filter(s => {
-    const sections = Object.values(s.sections || {})
-    return sections.some(sec => sec.claimedBy?.email === user?.email)
-  })
+  // Memoize filtered lists to avoid O(n) on every render
+  const myCounts = useMemo(() =>
+    sessions.filter(s => {
+      const sections = Object.values(s.sections || {})
+      return sections.some(sec => sec.claimedBy?.email === user?.email)
+    }),
+    [sessions, user?.email]
+  )
 
-  const createdByMe = sessions.filter(s => s.createdBy?.email === user?.email)
+  const createdByMe = useMemo(() =>
+    sessions.filter(s => s.createdBy?.email === user?.email),
+    [sessions, user?.email]
+  )
 
-  const activeSessions = myCounts.filter(s => ['open', 'in_progress'].includes(s.status))
-  const approvedSessions = myCounts.filter(s => s.status === 'approved')
-  const accuracies = approvedSessions.map(s => s.accuracy).filter(Boolean)
-  const avgAccuracy = accuracies.length
-    ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length * 10) / 10
-    : null
-  const totalDuration = approvedSessions.reduce((sum, s) => sum + (s.duration || 0), 0)
+  const stats = useMemo(() => {
+    const activeSessions = myCounts.filter(s => ACTIVE_STATUSES.includes(s.status))
+    const approvedSessions = myCounts.filter(s => s.status === SESSION_STATUS.APPROVED)
+    const accuracies = approvedSessions.map(s => s.accuracy).filter(Boolean)
+    const avgAccuracy = accuracies.length
+      ? Math.round(accuracies.reduce((a, b) => a + b, 0) / accuracies.length * 10) / 10
+      : null
+    const totalDuration = approvedSessions.reduce((sum, s) => sum + (s.duration || 0), 0)
+    return { activeSessions, approvedSessions, avgAccuracy, totalDuration }
+  }, [myCounts])
 
   const displaySessions = tab === 'my-counts' ? myCounts : createdByMe
 
@@ -76,7 +87,7 @@ export default function Profile() {
         <div className="stat-card">
           <div className="stat-label">Sessions counted</div>
           <div className="stat-value">{myCounts.length}</div>
-          <div className="stat-sub">{activeSessions.length} active</div>
+          <div className="stat-sub">{stats.activeSessions.length} active</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Sessions created</div>
@@ -85,14 +96,14 @@ export default function Profile() {
         </div>
         <div className="stat-card">
           <div className="stat-label">Avg accuracy</div>
-          <div className="stat-value" style={avgAccuracy >= 95 ? { color: 'var(--green)' } : avgAccuracy ? { color: 'var(--amber)' } : {}}>
-            {avgAccuracy ? `${avgAccuracy}%` : 'N/A'}
+          <div className="stat-value" style={stats.avgAccuracy >= ACCURACY.TARGET ? { color: 'var(--green)' } : stats.avgAccuracy ? { color: 'var(--amber)' } : {}}>
+            {stats.avgAccuracy ? `${stats.avgAccuracy}%` : 'N/A'}
           </div>
-          <div className="stat-sub">{approvedSessions.length} approved</div>
+          <div className="stat-sub">{stats.approvedSessions.length} approved</div>
         </div>
         <div className="stat-card">
           <div className="stat-label">Total time</div>
-          <div className="stat-value">{totalDuration > 0 ? `${totalDuration}m` : 'N/A'}</div>
+          <div className="stat-value">{stats.totalDuration > 0 ? `${stats.totalDuration}m` : 'N/A'}</div>
           <div className="stat-sub">across all counts</div>
         </div>
       </div>
@@ -164,8 +175,8 @@ export default function Profile() {
                       <td style={{ fontWeight: 600 }}>{s.siteId}</td>
                       <td style={{ textTransform: 'capitalize' }}>{s.type}</td>
                       <td>
-                        <span className={`badge ${s.mode === 'blind' ? 'badge-purple' : 'badge-gray'}`}>
-                          {s.mode || 'visible'}
+                        <span className={`badge ${s.mode === COUNT_MODE.BLIND ? 'badge-purple' : 'badge-gray'}`}>
+                          {s.mode || COUNT_MODE.VISIBLE}
                         </span>
                       </td>
                       <td className="text-muted">
@@ -185,7 +196,7 @@ export default function Profile() {
                       <td><SessionStatus status={s.status} /></td>
                       <td>
                         <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-                          {['open', 'in_progress'].includes(s.status) ? 'Continue' : 'View'}
+                          {ACTIVE_STATUSES.includes(s.status) ? 'Continue' : 'View'}
                         </button>
                       </td>
                     </tr>

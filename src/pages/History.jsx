@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSessionList } from '../hooks/useSession'
 import { useSites } from '../hooks/useInventory'
 import { SessionStatus, AccuracyBadge } from '../components/Badge'
+import { ACTIVE_STATUSES, COUNT_MODE } from '../constants'
 
 export default function History() {
   const navigate = useNavigate()
@@ -32,7 +33,7 @@ export default function History() {
     return (
       <div className="page">
         <div className="loading-screen" style={{ minHeight: 300 }}>
-          <div className="loading-spinner" /><p>Loading history…</p>
+          <div className="loading-spinner" /><p>Loading history...</p>
         </div>
       </div>
     )
@@ -53,13 +54,12 @@ export default function History() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="card mb-4" style={{ padding: '12px 16px' }}>
         <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
           <input
             className="input input-sm"
             style={{ width: 220 }}
-            placeholder="Search session ID or technician…"
+            placeholder="Search session ID or technician..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -90,7 +90,6 @@ export default function History() {
         </div>
       </div>
 
-      {/* Sessions table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {filtered.length === 0 ? (
           <div className="empty-state">
@@ -121,25 +120,25 @@ export default function History() {
                     <td style={{ fontWeight:600 }}>{s.siteId}</td>
                     <td style={{ textTransform:'capitalize' }}>{s.type}</td>
                     <td>
-                      <span className={`badge ${s.mode === 'blind' ? 'badge-purple' : 'badge-gray'}`} style={{ fontSize:10 }}>
-                        {s.mode || 'visible'}
+                      <span className={`badge ${s.mode === COUNT_MODE.BLIND ? 'badge-purple' : 'badge-gray'}`} style={{ fontSize:10 }}>
+                        {s.mode || COUNT_MODE.VISIBLE}
                       </span>
                     </td>
                     <td style={{ textAlign:'center' }}>
                       {s.collaborative
                         ? <span className="badge badge-blue" style={{ fontSize:10 }}>👥</span>
-                        : <span style={{ color:'var(--text-muted)', fontSize:12 }}>—</span>}
+                        : <span style={{ color:'var(--text-muted)', fontSize:12 }}>/</span>}
                     </td>
-                    <td className="text-muted">{s.createdBy?.name || '—'}</td>
+                    <td className="text-muted">{s.createdBy?.name || '/'}</td>
                     <td className="text-muted" style={{ whiteSpace:'nowrap' }}>
                       {s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-GB', {
                         day:'2-digit', month:'short', year:'numeric',
-                      }) : '—'}
+                      }) : '/'}
                     </td>
                     <td><AccuracyBadge accuracy={s.accuracy} /></td>
                     <td style={{ textAlign:'center' }}>
                       <span className="badge badge-green" style={{ fontSize:10 }}>
-                        {s.summary?.matched ?? '—'}
+                        {s.summary?.matched ?? '/'}
                       </span>
                     </td>
                     <td style={{ textAlign:'center' }}>
@@ -151,7 +150,7 @@ export default function History() {
                     <td>
                       <button className="btn btn-ghost btn-sm" style={{ fontSize:12 }}
                         onClick={e => { e.stopPropagation(); navigate(`/session/${s.id}`) }}>
-                        {['open','in_progress'].includes(s.status) ? 'Continue →' : 'View →'}
+                        {ACTIVE_STATUSES.includes(s.status) ? 'Continue →' : 'View →'}
                       </button>
                     </td>
                   </tr>

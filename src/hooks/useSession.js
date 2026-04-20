@@ -1,7 +1,7 @@
 /**
  * useSession.js
  * All session lifecycle operations — create, load, update, claim,
- * complete, approve. Now with scheduling + duration metrics.
+ * complete, approve. With scheduling + duration metrics.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -17,6 +17,11 @@ import {
 } from '../services/dataService'
 import { useAppContext } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
+import {
+  COUNT_TYPE,
+  getBinsForCountType,
+  POLL_INTERVAL_MS,
+} from '../constants'
 
 // ── All sessions (for History + Overview) ────────────────────────
 export function useSessionList(siteId) {
@@ -75,7 +80,7 @@ export function useSession(sessionId) {
 
   const startPolling = useCallback(() => {
     if (pollRef.current) clearInterval(pollRef.current)
-    pollRef.current = setInterval(fetch, 30000)
+    pollRef.current = setInterval(fetch, POLL_INTERVAL_MS)
   }, [fetch])
 
   const stopPolling = useCallback(() => {
@@ -209,7 +214,9 @@ function buildInitialSections(config) {
   sectionKeys.forEach(key => {
     sections[key] = {
       status: 'open',
-      claimedBy: config.collaborative ? null : { email: config.createdBy?.email, name: config.createdBy?.name },
+      claimedBy: config.collaborative
+        ? null
+        : { email: config.createdBy?.email, name: config.createdBy?.name },
       claimedAt: config.collaborative ? null : new Date().toISOString(),
       items: [],
     }
@@ -218,23 +225,11 @@ function buildInitialSections(config) {
 }
 
 export function getSectionKeysForConfig(config) {
-  if (config.type === 'custom' && config.customBins?.length) {
+  if (config.type === COUNT_TYPE.CUSTOM && config.customBins?.length) {
     return config.customBins
   }
-  return getSectionKeysForType(config.type, config.siteBins)
+  return getBinsForCountType(config.type, config.siteBins)
 }
 
-export function getSectionKeysForType(type, siteBins) {
-  const defaultBins = ['Stored', 'In Process', 'Spares', 'RMA_Pending', 'RMA_Vendor', 'Scrap_Pending', 'Receiving_Hold']
-  const bins = siteBins || defaultBins
-
-  const map = {
-    quick:    bins.filter(b => b === 'Stored'),
-    standard: bins.filter(b => ['Stored', 'In Process', 'Spares'].includes(b)),
-    full:     bins,
-    // Legacy support
-    daily:    ['Stored'],
-    weekly:   ['Stored', 'In Process', 'Spares'],
-  }
-  return map[type] || ['Stored']
-}
+// Re-export for backward compat — SessionStart uses this
+export { getBinsForCountType as getSectionKeysForType } from '../constants'

@@ -4,7 +4,8 @@
  * Keeps components decoupled from each other.
  */
 
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useRef } from 'react'
+import { TOAST_DURATION_MS } from '../constants'
 
 const AppContext = createContext(null)
 
@@ -14,8 +15,8 @@ export function AppProvider({ children }) {
   const [skuCache, setSkuCache]             = useState(null)
   const [sessionCache, setSessionCache]     = useState({})
   const [toast, setToast]                   = useState(null)
+  const toastTimer                          = useRef(null)
 
-  // Cache helpers — avoid redundant API calls within a session
   const cacheSites = useCallback((sites) => {
     const map = {}
     sites.forEach(s => { map[s.id] = s })
@@ -36,10 +37,11 @@ export function AppProvider({ children }) {
     })
   }, [])
 
-  // Toast notifications
-  const showToast = useCallback((message, type = 'info', duration = 3500) => {
+  // FIX: clean up previous timeout before setting a new one
+  const showToast = useCallback((message, type = 'info', duration = TOAST_DURATION_MS) => {
+    if (toastTimer.current) clearTimeout(toastTimer.current)
     setToast({ message, type, id: Date.now() })
-    setTimeout(() => setToast(null), duration)
+    toastTimer.current = setTimeout(() => setToast(null), duration)
   }, [])
 
   const value = {

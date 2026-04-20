@@ -1,23 +1,34 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSessionList } from '../hooks/useSession'
 import { useSites } from '../hooks/useInventory'
 import StatCard from '../components/StatCard'
 import { SessionStatus, AccuracyBadge } from '../components/Badge'
+import ImportModal from '../components/ImportModal'
+import { useAppContext } from '../context/AppContext'
+import {
+  SESSION_STATUS,
+  ACTIVE_STATUSES,
+  COUNT_MODE,
+  ACCURACY,
+} from '../constants'
 
 export default function Home() {
   const navigate = useNavigate()
   const { user }  = useAuth()
   const { sites } = useSites()
   const { sessions, loading } = useSessionList()
+  const { showToast } = useAppContext()
+  const [importOpen, setImportOpen] = useState(false)
 
   const emeaSites = sites.filter(s => s.region === 'EMEA')
   const usSites   = sites.filter(s => s.region === 'US')
 
-  const openSessions      = sessions.filter(s => ['open','in_progress'].includes(s.status))
-  const scheduledSessions = sessions.filter(s => s.status === 'scheduled')
-  const pendingSessions   = sessions.filter(s => s.status === 'pending_review')
-  const recentApproved    = sessions.filter(s => s.status === 'approved').slice(0, 5)
+  const openSessions      = sessions.filter(s => ACTIVE_STATUSES.includes(s.status))
+  const scheduledSessions = sessions.filter(s => s.status === SESSION_STATUS.SCHEDULED)
+  const pendingSessions   = sessions.filter(s => s.status === SESSION_STATUS.PENDING_REVIEW)
+  const recentApproved    = sessions.filter(s => s.status === SESSION_STATUS.APPROVED).slice(0, 5)
   const avgAccuracy       = recentApproved.length
     ? Math.round(recentApproved.reduce((s, x) => s + (x.accuracy || 0), 0) / recentApproved.length * 10) / 10
     : null
@@ -26,7 +37,7 @@ export default function Home() {
     return (
       <div className="page">
         <div className="loading-screen" style={{ minHeight: 300 }}>
-          <div className="loading-spinner" /><p>Loading…</p>
+          <div className="loading-spinner" /><p>Loading...</p>
         </div>
       </div>
     )
@@ -44,9 +55,14 @@ export default function Home() {
             {new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' })}
           </p>
         </div>
-        <button className="btn btn-cw btn-lg" onClick={() => navigate('/session/new')}>
-          + New count session
-        </button>
+        <div className="flex-center gap-2">
+          <button className="btn" onClick={() => setImportOpen(true)}>
+            Import balance
+          </button>
+          <button className="btn btn-cw btn-lg" onClick={() => navigate('/session/new')}>
+            + New count session
+          </button>
+        </div>
       </div>
 
       {/* Stats row */}
@@ -54,7 +70,7 @@ export default function Home() {
         <StatCard label="Active sessions"  value={openSessions.length}      sub="in progress"        accent={openSessions.length > 0 ? 'var(--cw-blue)' : undefined} />
         <StatCard label="Scheduled"        value={scheduledSessions.length} sub="upcoming counts"    accent={scheduledSessions.length > 0 ? 'var(--purple)' : undefined} />
         <StatCard label="Pending review"   value={pendingSessions.length}   sub="awaiting approval"  accent={pendingSessions.length > 0 ? 'var(--amber)' : undefined} />
-        <StatCard label="Avg accuracy"     value={avgAccuracy ? `${avgAccuracy}%` : '—'} sub="last 5 approved" accent={avgAccuracy >= 95 ? 'var(--green)' : avgAccuracy ? 'var(--amber)' : undefined} />
+        <StatCard label="Avg accuracy"     value={avgAccuracy ? `${avgAccuracy}%` : '/'} sub="last 5 approved" accent={avgAccuracy >= ACCURACY.TARGET ? 'var(--green)' : avgAccuracy ? 'var(--amber)' : undefined} />
       </div>
 
       {/* Alert banners */}
@@ -63,7 +79,7 @@ export default function Home() {
           <div className="alert-dot" style={{ background:'var(--amber)' }} />
           <div>
             <strong>{pendingSessions.length} session{pendingSessions.length > 1 ? 's' : ''} pending review</strong>
-            {' — '}
+            {' / '}
             <span style={{ textDecoration:'underline', cursor:'pointer' }} onClick={() => navigate('/history')}>
               View in History
             </span>
@@ -76,7 +92,7 @@ export default function Home() {
           <div className="alert-dot" style={{ background:'var(--cw-blue)' }} />
           <div>
             <strong>{scheduledSessions.length} scheduled count{scheduledSessions.length > 1 ? 's' : ''}</strong>
-            {' — '}
+            {' / '}
             {scheduledSessions.slice(0, 2).map((s, i) => (
               <span key={s.id}>
                 {i > 0 && ', '}
@@ -97,7 +113,7 @@ export default function Home() {
             <div className="region-icon">🇪🇺</div>
             <div>
               <div className="region-name">EMEA</div>
-              <div className="region-meta">{emeaSites.length} sites · Europe, Middle East & Africa</div>
+              <div className="region-meta">{emeaSites.length} sites / Europe, Middle East & Africa</div>
             </div>
             <div className="region-arrow">→</div>
           </div>
@@ -105,7 +121,7 @@ export default function Home() {
             <div className="region-icon">🇺🇸</div>
             <div>
               <div className="region-name">US</div>
-              <div className="region-meta">{usSites.length} sites · United States</div>
+              <div className="region-meta">{usSites.length} sites / United States</div>
             </div>
             <div className="region-arrow">→</div>
           </div>
@@ -144,22 +160,22 @@ export default function Home() {
                     <td style={{ fontWeight: 600 }}>{s.siteId}</td>
                     <td style={{ textTransform: 'capitalize' }}>{s.type}</td>
                     <td>
-                      <span className={`badge ${s.mode === 'blind' ? 'badge-purple' : 'badge-gray'}`}>
-                        {s.mode || 'visible'}
+                      <span className={`badge ${s.mode === COUNT_MODE.BLIND ? 'badge-purple' : 'badge-gray'}`}>
+                        {s.mode || COUNT_MODE.VISIBLE}
                       </span>
                     </td>
-                    <td className="text-muted">{s.createdBy?.name || '—'}</td>
+                    <td className="text-muted">{s.createdBy?.name || '/'}</td>
                     <td className="text-muted" style={{ whiteSpace:'nowrap' }}>
                       {formatDate(s.createdAt)}
                     </td>
                     <td className="text-muted" style={{ whiteSpace:'nowrap' }}>
-                      {s.duration ? `${s.duration} min` : '—'}
+                      {s.duration ? `${s.duration} min` : '/'}
                     </td>
                     <td><AccuracyBadge accuracy={s.accuracy} /></td>
                     <td><SessionStatus status={s.status} /></td>
                     <td>
                       <button className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
-                        {['open','in_progress'].includes(s.status) ? 'Continue →' : s.status === 'scheduled' ? 'Start →' : 'View →'}
+                        {ACTIVE_STATUSES.includes(s.status) ? 'Continue →' : s.status === SESSION_STATUS.SCHEDULED ? 'Start →' : 'View →'}
                       </button>
                     </td>
                   </tr>
@@ -169,6 +185,16 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      <ImportModal
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
+        existingSites={sites}
+        onImportComplete={(appData) => {
+          showToast(`Imported ${appData.sites.length} sites and ${appData.skus.length} items`, 'success')
+          setImportOpen(false)
+        }}
+      />
     </div>
   )
 }
@@ -181,7 +207,7 @@ function getGreeting() {
 }
 
 function formatDate(iso) {
-  if (!iso) return '—'
+  if (!iso) return '/'
   const d = new Date(iso)
   const today = new Date()
   const diff  = Math.floor((today - d) / 86400000)

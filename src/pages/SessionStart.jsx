@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useSites } from '../hooks/useInventory'
-import { useSessionList } from '../hooks/useSession'
-import { useCreateSession, getSectionKeysForType } from '../hooks/useSession'
-
-const COUNT_TYPES = [
-  { key: 'quick',    label: 'Quick count',    desc: 'Stored bins only. Fast, focused on primary stock.',                       color: 'var(--cw-blue)' },
-  { key: 'standard', label: 'Standard count',  desc: 'Stored + In Process + Spares. Recommended for weekly cadence.',           color: 'var(--purple)' },
-  { key: 'full',     label: 'Full count',      desc: 'All bins including RMA and Scrap. For audits, wall-to-wall, and monthly.', color: 'var(--red)' },
-  { key: 'custom',   label: 'Custom count',    desc: 'Choose specific bins, categories, or SKUs to count.',                     color: 'var(--amber)' },
-]
+import { useSessionList, useCreateSession } from '../hooks/useSession'
+import {
+  COUNT_TYPE,
+  COUNT_TYPE_CONFIG,
+  COUNT_MODE,
+  DEFAULT_BINS,
+  ACCURACY,
+  getBinsForCountType,
+  formatBinLabel,
+} from '../constants'
 
 function Toggle({ on, onToggle }) {
   return (
@@ -27,8 +28,8 @@ export default function SessionStart() {
   const { create, creating } = useCreateSession()
 
   const [siteId,        setSiteId]        = useState(params.get('site') || '')
-  const [countType,     setCountType]     = useState('quick')
-  const [mode,          setMode]          = useState('visible')
+  const [countType,     setCountType]     = useState(COUNT_TYPE.QUICK)
+  const [mode,          setMode]          = useState(COUNT_MODE.VISIBLE)
   const [collaborative, setCollaborative] = useState(false)
   const [notes,         setNotes]         = useState('')
   const [scheduledDate, setScheduledDate] = useState('')
@@ -39,18 +40,17 @@ export default function SessionStart() {
   }, [sites, siteId])
 
   const selectedSite = sites.find(s => s.id === siteId)
-  const siteBins = selectedSite?.bins || ['Stored', 'In Process', 'Spares', 'RMA_Pending', 'RMA_Vendor', 'Scrap_Pending', 'Receiving_Hold']
+  const siteBins = selectedSite?.bins || DEFAULT_BINS
 
-  // Last count info for selected site
   const siteSessions = sessions.filter(s => s.siteId === siteId && s.status === 'approved')
   const lastSession = siteSessions[0]
   const lastAccuracy = lastSession?.accuracy
 
-  const sectionKeys = countType === 'custom'
+  const sectionKeys = countType === COUNT_TYPE.CUSTOM
     ? customBins
-    : getSectionKeysForType(countType, siteBins)
+    : getBinsForCountType(countType, siteBins)
 
-  const canSubmit = !!siteId && !creating && (countType !== 'custom' || customBins.length > 0)
+  const canSubmit = !!siteId && !creating && (countType !== COUNT_TYPE.CUSTOM || customBins.length > 0)
 
   const toggleCustomBin = (bin) => {
     setCustomBins(prev =>
@@ -67,13 +67,12 @@ export default function SessionStart() {
       collaborative,
       notes,
       scheduledDate: scheduledDate || null,
-      customBins: countType === 'custom' ? customBins : null,
+      customBins: countType === COUNT_TYPE.CUSTOM ? customBins : null,
       siteBins,
     })
     if (session) navigate(`/session/${session.id}`)
   }
 
-  // Group sites by region for dropdown
   const regions = [...new Set(sites.map(s => s.region))].sort()
 
   return (
@@ -108,7 +107,6 @@ export default function SessionStart() {
             ))}
           </select>
 
-          {/* Last count info */}
           {siteId && (
             <div className="site-select-info">
               <div className="site-select-info-item">
@@ -123,7 +121,7 @@ export default function SessionStart() {
                 <span style={{ color: 'var(--text-muted)' }}>Accuracy:</span>
                 <span style={{
                   fontWeight: 600,
-                  color: lastAccuracy >= 95 ? 'var(--green)' : lastAccuracy >= 85 ? 'var(--amber)' : lastAccuracy ? 'var(--red)' : 'var(--text-muted)',
+                  color: lastAccuracy >= ACCURACY.TARGET ? 'var(--green)' : lastAccuracy >= ACCURACY.GOOD ? 'var(--amber)' : lastAccuracy ? 'var(--red)' : 'var(--text-muted)',
                 }}>
                   {lastAccuracy ? `${lastAccuracy}%` : 'N/A'}
                 </span>
@@ -140,7 +138,7 @@ export default function SessionStart() {
         <div className="card">
           <h3 className="card-section-title">Count type</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {COUNT_TYPES.map(type => (
+            {COUNT_TYPE_CONFIG.map(type => (
               <div
                 key={type.key}
                 className={`type-option${countType === type.key ? ' selected' : ''}`}
@@ -152,11 +150,11 @@ export default function SessionStart() {
                 <div style={{ flex: 1 }}>
                   <div className="type-label">{type.label}</div>
                   <div className="type-desc">{type.desc}</div>
-                  {type.key !== 'custom' && siteId && (
+                  {type.key !== COUNT_TYPE.CUSTOM && siteId && (
                     <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
-                      {getSectionKeysForType(type.key, siteBins).map(s => (
+                      {getBinsForCountType(type.key, siteBins).map(s => (
                         <span key={s} className="badge badge-gray" style={{ fontSize: 10 }}>
-                          {s.replace(/_/g, ' ')}
+                          {formatBinLabel(s)}
                         </span>
                       ))}
                     </div>
@@ -169,7 +167,7 @@ export default function SessionStart() {
         </div>
 
         {/* Custom bin selector */}
-        {countType === 'custom' && siteId && (
+        {countType === COUNT_TYPE.CUSTOM && siteId && (
           <div className="card">
             <h3 className="card-section-title">Select bins to count</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -183,7 +181,7 @@ export default function SessionStart() {
                   <span className="bin-chip-check">
                     {customBins.includes(bin) ? '✓' : ''}
                   </span>
-                  {bin.replace(/_/g, ' ')}
+                  {formatBinLabel(bin)}
                 </button>
               ))}
             </div>
@@ -200,8 +198,8 @@ export default function SessionStart() {
           <h3 className="card-section-title">Count mode</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
-              { key: 'visible', label: 'Visible count', desc: 'Expected quantities shown during count. Faster, good for regular checks.' },
-              { key: 'blind', label: 'Blind count', desc: 'Expected quantities hidden. Technician counts independently for unbiased results. Recommended for audits.' },
+              { key: COUNT_MODE.VISIBLE, label: 'Visible count', desc: 'Expected quantities shown during count. Faster, good for regular checks.' },
+              { key: COUNT_MODE.BLIND, label: 'Blind count', desc: 'Expected quantities hidden. Technician counts independently for unbiased results. Recommended for audits.' },
             ].map(m => (
               <div
                 key={m.key}
@@ -214,7 +212,7 @@ export default function SessionStart() {
                 <div style={{ flex: 1 }}>
                   <div className="type-label">
                     {m.label}
-                    {m.key === 'blind' && (
+                    {m.key === COUNT_MODE.BLIND && (
                       <span className="badge badge-purple" style={{ marginLeft: 8, fontSize: 10 }}>
                         Recommended for audits
                       </span>
@@ -285,7 +283,7 @@ export default function SessionStart() {
           />
         </div>
 
-        {/* Summary + CREATE button */}
+        {/* Summary + CREATE */}
         <div className="session-summary-card">
           <div className="session-summary-content">
             <div style={{ fontSize: 13, opacity: .6, marginBottom: 4 }}>Session summary</div>
@@ -305,7 +303,7 @@ export default function SessionStart() {
               )}
             </div>
             <div style={{ fontSize: 12, opacity: .5, marginTop: 6 }}>
-              Sections: {sectionKeys.length > 0 ? sectionKeys.map(k => k.replace(/_/g, ' ')).join(', ') : 'None selected'}
+              Sections: {sectionKeys.length > 0 ? sectionKeys.map(k => formatBinLabel(k)).join(', ') : 'None selected'}
             </div>
           </div>
           <button className="btn btn-create-session" onClick={handleCreate} disabled={!canSubmit}>

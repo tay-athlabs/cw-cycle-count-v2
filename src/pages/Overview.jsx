@@ -3,23 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useSites } from '../hooks/useInventory'
 import { useSessionList } from '../hooks/useSession'
 import { SiteStatus, SessionStatus } from '../components/Badge'
-
-const BIN_COLORS = {
-  'Stored':         'var(--cw-blue)',
-  'In Process':     'var(--purple)',
-  'Spares':         'var(--green)',
-  'RMA_Pending':    'var(--amber)',
-  'RMA_Vendor':     'var(--red)',
-  'Scrap_Pending':  'var(--text-muted)',
-  'Receiving_Hold': 'var(--blue)',
-}
+import { BIN_COLORS, ACTIVE_STATUSES, SESSION_STATUS } from '../constants'
 
 function SiteCard({ site, sessions }) {
   const navigate = useNavigate()
   const siteSessions = sessions.filter(s => s.siteId === site.id)
-  const lastSession  = siteSessions.find(s => s.status === 'approved')
-  const openCount    = siteSessions.filter(s => ['open','in_progress'].includes(s.status)).length
-  const scheduledSessions = siteSessions.filter(s => s.status === 'scheduled')
+  const lastSession  = siteSessions.find(s => s.status === SESSION_STATUS.APPROVED)
+  const openCount    = siteSessions.filter(s => ACTIVE_STATUSES.includes(s.status)).length
+  const scheduledSessions = siteSessions.filter(s => s.status === SESSION_STATUS.SCHEDULED)
   const siteStatus   = openCount > 0 ? 'in-progress' : lastSession ? 'up-to-date' : 'due'
 
   return (
@@ -32,7 +23,6 @@ function SiteCard({ site, sessions }) {
         <SiteStatus status={siteStatus === 'up-to-date' ? 'up-to-date' : 'count-due'} />
       </div>
 
-      {/* Bins bar */}
       <div className="site-bars">
         {(site.bins || []).slice(0, 5).map(bin => (
           <div key={bin} className="site-bar-row">
@@ -67,7 +57,7 @@ function SiteCard({ site, sessions }) {
             <span className="badge badge-purple" style={{ fontSize: 11 }}>
               {scheduledSessions.length} scheduled
               {scheduledSessions[0]?.scheduledDate && (
-                <> · {new Date(scheduledSessions[0].scheduledDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short' })}</>
+                <> / {new Date(scheduledSessions[0].scheduledDate).toLocaleDateString('en-GB', { day:'2-digit', month:'short' })}</>
               )}
             </span>
           )}
@@ -88,11 +78,9 @@ export default function Overview() {
   const [search, setSearch] = useState('')
 
   const loading = sitesLoading || sessionsLoading
-
   const regions = ['EMEA', 'US']
   const regionSites = sites.filter(s => s.region === activeRegion)
 
-  // Group by sub-region
   const subRegionGroups = {}
   regionSites.forEach(site => {
     const sr = site.subRegion || 'Other'
@@ -100,7 +88,6 @@ export default function Overview() {
     subRegionGroups[sr].push(site)
   })
 
-  // Filter by search
   const filteredGroups = {}
   Object.entries(subRegionGroups).forEach(([sr, siteList]) => {
     const filtered = siteList.filter(s =>
@@ -117,7 +104,7 @@ export default function Overview() {
     return (
       <div className="page">
         <div className="loading-screen" style={{ minHeight: 300 }}>
-          <div className="loading-spinner" /><p>Loading overview…</p>
+          <div className="loading-spinner" /><p>Loading overview...</p>
         </div>
       </div>
     )
@@ -125,18 +112,16 @@ export default function Overview() {
 
   return (
     <div className="page">
-      {/* Header */}
       <div className="flex-between mb-6">
         <div>
           <h1 className="page-title">Site Overview</h1>
-          <p className="page-sub">{totalFiltered} sites · {activeRegion} region</p>
+          <p className="page-sub">{totalFiltered} sites / {activeRegion} region</p>
         </div>
         <button className="btn btn-cw" onClick={() => navigate('/session/new')}>
           + New count session
         </button>
       </div>
 
-      {/* Region tabs + search */}
       <div className="overview-toolbar mb-6">
         <div className="region-tabs">
           {regions.map(r => (
@@ -162,7 +147,6 @@ export default function Overview() {
         />
       </div>
 
-      {/* Sub-region groups */}
       {Object.keys(filteredGroups).length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">🏢</div>
