@@ -5,21 +5,17 @@ import { useAnalytics } from '../hooks/useAnalytics'
 import StatCard from '../components/StatCard'
 import { SessionStatus, AccuracyBadge } from '../components/Badge'
 import {
+  BIN_COLORS,
+  ACTIVE_STATUSES,
+  SESSION_STATUS,
+  COUNT_MODE,
+  ACCURACY,
+  formatBinLabel,
+} from '../constants'
+import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from 'recharts'
-
-const BIN_COLORS = {
-  'Stored':         'var(--cw-blue)',
-  'In Process':     'var(--purple)',
-  'Spares':         'var(--green)',
-  'RMA_Pending':    'var(--amber)',
-  'RMA_Vendor':     'var(--red)',
-  'Scrap_Pending':  'var(--text-muted)',
-  'Receiving_Hold': 'var(--blue)',
-  daily: 'var(--cw-blue)', excess: 'var(--purple)', critical: 'var(--red)',
-  rma: 'var(--amber)', quarantine: 'var(--text-muted)',
-}
 
 export default function SiteDetail() {
   const { siteId }  = useParams()
@@ -35,7 +31,7 @@ export default function SiteDetail() {
     return (
       <div className="page">
         <div className="loading-screen" style={{ minHeight: 300 }}>
-          <div className="loading-spinner" /><p>Loading site…</p>
+          <div className="loading-spinner" /><p>Loading site...</p>
         </div>
       </div>
     )
@@ -53,7 +49,6 @@ export default function SiteDetail() {
     )
   }
 
-  // Inventory totals per bin
   const siteBins = site.bins || ['Stored', 'In Process', 'Spares', 'RMA_Pending', 'RMA_Vendor']
   const sectionTotals = {}
   siteBins.forEach(k => {
@@ -61,8 +56,8 @@ export default function SiteDetail() {
   })
   const totalItems = Object.values(sectionTotals).reduce((a, b) => a + b, 0)
 
-  const openSessions     = sessions.filter(s => ['open','in_progress'].includes(s.status))
-  const approvedSessions = sessions.filter(s => s.status === 'approved')
+  const openSessions     = sessions.filter(s => ACTIVE_STATUSES.includes(s.status))
+  const approvedSessions = sessions.filter(s => s.status === SESSION_STATUS.APPROVED)
   const avgAccuracy      = approvedSessions.length
     ? Math.round(approvedSessions.reduce((s, x) => s + (x.accuracy || 0), 0) / approvedSessions.length * 10) / 10
     : null
@@ -74,9 +69,9 @@ export default function SiteDetail() {
         <button className="btn btn-ghost btn-sm" onClick={() => navigate('/')}>←</button>
         <div style={{ flex: 1 }}>
           <h1 className="page-title" style={{ marginBottom: 2 }}>
-            {site.name} — {site.city}
+            {site.name} / {site.city}
           </h1>
-          <p className="page-sub">{site.country} · {site.region} · {site.timezone}</p>
+          <p className="page-sub">{site.country} / {site.region} / {site.timezone}</p>
         </div>
         <button className="btn btn-cw" onClick={() => navigate(`/session/new?site=${siteId}`)}>
           + New count
@@ -90,9 +85,9 @@ export default function SiteDetail() {
           accent={openSessions.length > 0 ? 'var(--blue)' : undefined} />
         <StatCard label="Total sessions" value={sessions.length}   sub="all time" />
         <StatCard label="Avg accuracy"
-          value={avgAccuracy ? `${avgAccuracy}%` : '—'}
+          value={avgAccuracy ? `${avgAccuracy}%` : '/'}
           sub="approved sessions"
-          accent={avgAccuracy >= 95 ? 'var(--green)' : avgAccuracy ? 'var(--amber)' : undefined}
+          accent={avgAccuracy >= ACCURACY.TARGET ? 'var(--green)' : avgAccuracy ? 'var(--amber)' : undefined}
         />
       </div>
 
@@ -105,7 +100,7 @@ export default function SiteDetail() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {Object.entries(sectionTotals).map(([key, val]) => {
               const color = BIN_COLORS[key] || 'var(--border-2)'
-              const label = key.replace(/_/g, ' ')
+              const label = formatBinLabel(key)
               const pct = totalItems > 0 ? (val / totalItems) * 100 : 0
               return (
                 <div key={key}>
@@ -200,19 +195,19 @@ export default function SiteDetail() {
                     <td className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{s.id}</td>
                     <td style={{ textTransform:'capitalize' }}>{s.type}</td>
                     <td>
-                      <span className={`badge ${s.mode === 'blind' ? 'badge-purple' : 'badge-gray'}`}>
-                        {s.mode || 'visible'}
+                      <span className={`badge ${s.mode === COUNT_MODE.BLIND ? 'badge-purple' : 'badge-gray'}`}>
+                        {s.mode || COUNT_MODE.VISIBLE}
                       </span>
                     </td>
-                    <td className="text-muted">{s.createdBy?.name || '—'}</td>
+                    <td className="text-muted">{s.createdBy?.name || '/'}</td>
                     <td className="text-muted" style={{ whiteSpace:'nowrap' }}>
-                      {s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-GB') : '—'}
+                      {s.createdAt ? new Date(s.createdAt).toLocaleDateString('en-GB') : '/'}
                     </td>
                     <td><AccuracyBadge accuracy={s.accuracy} /></td>
                     <td><SessionStatus status={s.status} /></td>
                     <td>
                       <button className="btn btn-ghost btn-sm">
-                        {['open','in_progress'].includes(s.status) ? 'Continue →' : 'View →'}
+                        {ACTIVE_STATUSES.includes(s.status) ? 'Continue →' : 'View →'}
                       </button>
                     </td>
                   </tr>

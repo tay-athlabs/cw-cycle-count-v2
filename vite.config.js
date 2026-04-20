@@ -7,6 +7,14 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-charts': ['recharts'],
+          'vendor-xlsx': ['xlsx'],
+        },
+      },
+    },
   },
   resolve: {
     alias: {

@@ -6,6 +6,7 @@ import {
   COUNT_TYPE,
   COUNT_TYPE_CONFIG,
   COUNT_MODE,
+  SESSION_STATUS,
   DEFAULT_BINS,
   ACCURACY,
   getBinsForCountType,
@@ -42,7 +43,7 @@ export default function SessionStart() {
   const selectedSite = sites.find(s => s.id === siteId)
   const siteBins = selectedSite?.bins || DEFAULT_BINS
 
-  const siteSessions = sessions.filter(s => s.siteId === siteId && s.status === 'approved')
+  const siteSessions = sessions.filter(s => s.siteId === siteId && s.status === SESSION_STATUS.APPROVED)
   const lastSession = siteSessions[0]
   const lastAccuracy = lastSession?.accuracy
 

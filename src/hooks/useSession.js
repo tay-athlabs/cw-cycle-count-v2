@@ -231,5 +231,3 @@ export function getSectionKeysForConfig(config) {
   return getBinsForCountType(config.type, config.siteBins)
 }
 
-// Re-export for backward compat — SessionStart uses this
-export { getBinsForCountType as getSectionKeysForType } from '../constants'
