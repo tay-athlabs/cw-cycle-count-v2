@@ -14,7 +14,6 @@ import Analytics from './pages/Analytics'
 import History from './pages/History'
 import SKUMaster from './pages/SKUMaster'
 import Profile from './pages/Profile'
-import Import from './pages/Import'
 
 export default function App() {
   const { isAuthenticated, loading } = useAuth()
@@ -47,7 +46,6 @@ export default function App() {
               <Route path="/analytics"               element={<Analytics />} />
               <Route path="/history"                 element={<History />} />
               <Route path="/sku-master"              element={<SKUMaster />} />
-              <Route path="/import"                  element={<Import />} />
               <Route path="/profile"                 element={<Profile />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
