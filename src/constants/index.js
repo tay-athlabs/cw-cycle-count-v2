@@ -146,6 +146,7 @@ export function getBinsForCountType(type, siteBins) {
  * Formats a bin key for display.
  */
 export function formatBinLabel(key) {
+  if (!key) return ''
   return BIN_LABELS[key] || key.replace(/_/g, ' ')
 }
 

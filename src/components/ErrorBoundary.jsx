@@ -23,10 +23,11 @@ export default class ErrorBoundary extends Component {
 
   handleReset = () => {
     this.setState({ hasError: false, error: null })
+    window.location.href = '/cw-cycle-count-v2/'
   }
 
   handleReload = () => {
-    window.location.reload()
+    window.location.href = '/cw-cycle-count-v2/'
   }
 
   render() {

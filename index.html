@@ -3,13 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="CW Cycle Count — Internal inventory management for CoreWeave DC operations" />
+    <meta name="description" content="CW Cycle Count - Internal inventory management for CoreWeave DC operations" />
     <meta name="theme-color" content="#0F1117" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230F1117'/><path d='M8 6l-4 5.3v9.4L8 26h4l-4-5.3v-9.4L12 6H8z' fill='%233D5AFE'/><text x='16' y='21' font-size='11' font-weight='700' fill='white' font-family='sans-serif'>CC</text></svg>" />
     <title>CW Cycle Count</title>
+    <!-- GitHub Pages SPA redirect receiver -->
+    <script type="text/javascript">
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
   </head>
   <body>
     <div id="root"></div>

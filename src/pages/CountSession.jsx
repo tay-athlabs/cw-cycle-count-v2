@@ -206,15 +206,17 @@ export default function CountSession() {
       </div>
 
       {/* Progress bar */}
-      <div className="progress-wrap">
-        <div className="progress-header">
-          <span>{formatBinLabel(activeSection)} progress</span>
-          <span>{stats.confirmed + stats.variances} / {stats.total} counted ({stats.pct}%)</span>
+      {activeSection && (
+        <div className="progress-wrap">
+          <div className="progress-header">
+            <span>{formatBinLabel(activeSection)} progress</span>
+            <span>{stats.confirmed + stats.variances} / {stats.total} counted ({stats.pct}%)</span>
+          </div>
+          <div className="progress-track">
+            <div className="progress-fill" style={{ width: `${stats.pct}%`, background: secColor }} />
+          </div>
         </div>
-        <div className="progress-track">
-          <div className="progress-fill" style={{ width: `${stats.pct}%`, background: secColor }} />
-        </div>
-      </div>
+      )}
 
       {/* Main layout */}
       <div className="section-layout">
