@@ -223,6 +223,100 @@ export async function updateSectionItems(sessionId, sectionKey, items) {
   return updated
 }
 
+// ── IMPORT ────────────────────────────────────────────────────────
+
+/**
+ * Apply imported data to the store.
+ * mode: 'update' | 'replace' | 'add_new'
+ *   - update:  merge new data into existing sites, update quantities, add new sites/items
+ *   - replace: wipe all site and SKU data (preserves sessions), load fresh from import
+ *   - add_new: only import sites that don't already exist, skip existing ones
+ *
+ * NEVER touches sessions — import is purely site + SKU data.
+ */
+export async function applyImport(appData, mode = 'update') {
+  const store = getStore()
+  const { sites: importedSites, skus: importedSKUs } = appData
+  const existingSiteIds = new Set(store.sites.map(s => s.id))
+
+  if (mode === 'replace') {
+    // Wipe sites and SKUs, keep sessions
+    store.sites = importedSites
+    store.skus = importedSKUs
+  } else if (mode === 'add_new') {
+    // Only add sites that don't exist
+    const newSites = importedSites.filter(s => !existingSiteIds.has(s.id))
+    store.sites = [...store.sites, ...newSites]
+
+    // For SKUs: add new ones, but don't update existing inventory
+    const existingCWPNs = new Set(store.skus.map(s => s.cwpn))
+    const newSKUs = importedSKUs.filter(s => !existingCWPNs.has(s.cwpn))
+    store.skus = [...store.skus, ...newSKUs]
+  } else {
+    // 'update' — merge
+    // Sites: update existing, add new
+    const siteMap = {}
+    store.sites.forEach(s => { siteMap[s.id] = s })
+    importedSites.forEach(imported => {
+      if (siteMap[imported.id]) {
+        // Merge: keep rooms, update bins/entities
+        siteMap[imported.id] = {
+          ...siteMap[imported.id],
+          bins: [...new Set([...(siteMap[imported.id].bins || []), ...(imported.bins || [])])].sort(),
+          entities: [...new Set([...(siteMap[imported.id].entities || []), ...(imported.entities || [])])].sort(),
+          active: true,
+        }
+      } else {
+        siteMap[imported.id] = imported
+      }
+    })
+    store.sites = Object.values(siteMap).sort((a, b) => a.id.localeCompare(b.id))
+
+    // SKUs: update inventory quantities, add new items
+    const skuMap = {}
+    store.skus.forEach(s => { skuMap[s.cwpn] = s })
+    importedSKUs.forEach(imported => {
+      if (skuMap[imported.cwpn]) {
+        // Merge inventory: imported quantities overwrite per-site per-bin
+        const merged = { ...skuMap[imported.cwpn].inventory }
+        Object.entries(imported.inventory || {}).forEach(([siteId, bins]) => {
+          merged[siteId] = { ...(merged[siteId] || {}), ...bins }
+        })
+        skuMap[imported.cwpn] = {
+          ...skuMap[imported.cwpn],
+          inventory: merged,
+          category: imported.category || skuMap[imported.cwpn].category,
+          typeName: imported.typeName || skuMap[imported.cwpn].typeName,
+        }
+      } else {
+        skuMap[imported.cwpn] = imported
+      }
+    })
+    store.skus = Object.values(skuMap).sort((a, b) => a.cwpn.localeCompare(b.cwpn))
+  }
+
+  saveStore(store)
+
+  return {
+    sitesCount: store.sites.length,
+    skusCount: store.skus.length,
+    sessionsPreserved: store.sessions.length,
+  }
+}
+
+/**
+ * Reset to seed data (for development/testing).
+ */
+export async function resetStore() {
+  const store = {
+    sites: sitesData,
+    skus: skusData,
+    sessions: [exampleSession],
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+  return store
+}
+
 // ── ANALYTICS ─────────────────────────────────────────────────────
 
 export async function getAnalytics(siteId) {

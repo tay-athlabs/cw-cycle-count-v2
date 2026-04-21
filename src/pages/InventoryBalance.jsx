@@ -319,6 +319,7 @@ export default function InventoryBalance() {
         onImportComplete={(appData) => {
           showToast(`Imported ${appData.sites.length} sites and ${appData.skus.length} items`, 'success')
           setImportOpen(false)
+          setTimeout(() => window.location.href = '/cw-cycle-count-v2/inventory', 1500)
         }}
       />
     </div>
