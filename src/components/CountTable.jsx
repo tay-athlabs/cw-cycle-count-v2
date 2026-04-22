@@ -29,6 +29,7 @@ export default function CountTable({
   activeSection,
   isBlind,
   isReadOnly,
+  isAuditCount,
   canEdit,
   saving,
   localCounts,
@@ -76,11 +77,11 @@ export default function CountTable({
           <button
             className="btn btn-success btn-sm"
             onClick={onCompleteSection}
-            disabled={saving || stats.pending > 0 || stats.recountsPending > 0}
+            disabled={saving || stats.pending > 0 || (isAuditCount && stats.recountsPending > 0)}
             title={stats.pending > 0
               ? `${stats.pending} items still pending`
-              : stats.recountsPending > 0
-              ? `${stats.recountsPending} recounts pending`
+              : isAuditCount && stats.recountsPending > 0
+              ? `${stats.recountsPending} recounts pending (required for audit counts)`
               : 'Mark section complete'
             }
           >

@@ -260,6 +260,9 @@ export async function createSession(sessionData) {
     status: sessionData.scheduledDate && new Date(sessionData.scheduledDate) > new Date()
       ? 'scheduled'
       : 'open',
+    joinCode: sessionData.collaborative
+      ? `${sessionData.siteId}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+      : null,
     createdAt: now,
     startedAt: null,
     completedAt: null,
@@ -340,8 +343,10 @@ export async function completeSession(id, userInfo) {
 
 export async function approveSession(id, userInfo) {
   const store = getStore()
-  const session = store.sessions.find(s => s.id === id)
-  if (!session) throw new Error(`Session ${id} not found`)
+  const idx = store.sessions.findIndex(s => s.id === id)
+  if (idx === -1) throw new Error(`Session ${id} not found`)
+
+  const session = store.sessions[idx]
 
   // Reconcile inventory: update SKU balances to match counted values
   const adjustments = []
@@ -352,7 +357,7 @@ export async function approveSession(id, userInfo) {
         if (skuIdx !== -1) {
           const oldQty = store.skus[skuIdx].inventory?.[session.siteId]?.[sectionKey] || 0
           const newQty = typeof item.counted === 'number' ? item.counted : parseInt(item.counted)
-          if (oldQty !== newQty) {
+          if (!isNaN(newQty) && oldQty !== newQty) {
             if (!store.skus[skuIdx].inventory[session.siteId]) {
               store.skus[skuIdx].inventory[session.siteId] = {}
             }
@@ -371,13 +376,21 @@ export async function approveSession(id, userInfo) {
     })
   })
 
-  const updated = await updateSession(id, {
+  // Update session status in the same store reference
+  store.sessions[idx] = {
+    ...session,
     status: 'approved',
     approvedAt: new Date().toISOString(),
     approvedBy: userInfo,
     adjustments,
-  })
+  }
 
+  // Recalculate stats
+  const { summary, accuracy } = calculateSessionStats(store.sessions[idx])
+  store.sessions[idx].summary = summary
+  store.sessions[idx].accuracy = accuracy
+
+  // Single atomic save
   saveStore(store)
 
   await logAudit('session_approved', {
@@ -386,7 +399,7 @@ export async function approveSession(id, userInfo) {
     adjustments: adjustments.map(a => `${a.cwpn} ${a.bin}: ${a.oldQty} → ${a.newQty}`),
   }, userInfo)
 
-  return updated
+  return store.sessions[idx]
 }
 
 export async function rejectSession(id, userInfo, reason) {

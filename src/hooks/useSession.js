@@ -54,7 +54,7 @@ export function useSessionList(siteId) {
 
 // ── Single session (for active count + detail view) ───────────────
 export function useSession(sessionId) {
-  const { sessionCache, cacheSession, invalidateSession } = useAppContext()
+  const { sessionCache, cacheSession, invalidateSession, cacheSKUs } = useAppContext()
   const { showToast } = useAppContext()
   const { user } = useAuth()
 
@@ -169,13 +169,16 @@ export function useSession(sessionId) {
       const updated = await approveSession(sessionId, { email: user.email, name: user.name })
       setSession(updated)
       cacheSession(updated)
-      showToast('Session approved', 'success')
+      invalidateSession(sessionId)
+      // Force SKU cache refresh since inventory balances changed
+      cacheSKUs(null)
+      showToast(`Session approved${updated.adjustments?.length ? ` — ${updated.adjustments.length} inventory adjustment${updated.adjustments.length !== 1 ? 's' : ''} applied` : ''}`, 'success')
     } catch (err) {
       showToast(`Approve failed: ${err.message}`, 'error')
     } finally {
       setSaving(false)
     }
-  }, [sessionId, user, cacheSession, showToast])
+  }, [sessionId, user, cacheSession, invalidateSession, cacheSKUs, showToast])
 
   // ── Recount operations ─────────────────────────────────────────
 

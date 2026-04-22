@@ -74,6 +74,7 @@ export default function CountSession() {
   // ── Derived state ────────────────────────────────────────────
   const isBlind    = session?.mode === COUNT_MODE.BLIND
   const isW2W      = session?.type === COUNT_TYPE.WALL_TO_WALL
+  const isAuditCount = isW2W || session?.type === COUNT_TYPE.FULL
   const isReadOnly = !EDITABLE_STATUSES.includes(session?.status)
   const canExport  = EXPORTABLE_STATUSES.includes(session?.status)
   const currentSection = session?.sections?.[activeSection]
@@ -211,6 +212,11 @@ export default function CountSession() {
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
               {session.siteId} / {session.type} / Created by {session.createdBy?.name || 'Unknown'}
               {session.notes && ` / ${session.notes}`}
+              {session.collaborative && session.joinCode && (
+                <span style={{ marginLeft: 8 }}>
+                  / Join code: <strong style={{ color: 'var(--cw-blue)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.05em' }}>{session.joinCode}</strong>
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -378,6 +384,7 @@ export default function CountSession() {
             activeSection={activeSection}
             isBlind={isBlind}
             isReadOnly={isReadOnly}
+            isAuditCount={isAuditCount}
             canEdit={canEdit}
             saving={saving}
             localCounts={localCounts}

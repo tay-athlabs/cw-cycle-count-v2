@@ -53,7 +53,9 @@ const SUB_BIN_SUFFIXES = {
 // ── CSV PARSER ────────────────────────────────────────────────────
 
 export function parseCSV(csvText) {
-  const lines = csvText.split('\n').filter(l => l.trim())
+  // Strip BOM and normalize line endings
+  const cleaned = csvText.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  const lines = cleaned.split('\n').filter(l => l.trim())
   if (lines.length < 2) return { headers: [], rows: [] }
 
   const headers = parseCSVLine(lines[0])
