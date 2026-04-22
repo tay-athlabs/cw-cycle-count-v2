@@ -26,6 +26,8 @@ function getStore() {
     sites: sitesData,
     skus: skusData,
     sessions: [exampleSession],
+    auditLog: [],
+    serialRegistry: {},
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(initial))
   return initial
@@ -33,6 +35,32 @@ function getStore() {
 
 function saveStore(store) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+}
+
+// ── AUDIT LOG ─────────────────────────────────────────────────────
+
+export async function logAudit(action, details, userInfo) {
+  const store = getStore()
+  if (!store.auditLog) store.auditLog = []
+  const entry = {
+    id: `AUD-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    action,
+    timestamp: new Date().toISOString(),
+    user: userInfo ? { email: userInfo.email, name: userInfo.name } : null,
+    ...details,
+  }
+  store.auditLog.push(entry)
+  saveStore(store)
+  return entry
+}
+
+export async function getAuditLog(filters = {}) {
+  const store = getStore()
+  let logs = store.auditLog || []
+  if (filters.sessionId) logs = logs.filter(l => l.sessionId === filters.sessionId)
+  if (filters.action) logs = logs.filter(l => l.action === filters.action)
+  if (filters.itemCwpn) logs = logs.filter(l => l.cwpn === filters.itemCwpn)
+  return logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
 }
 
 // ── SITES ─────────────────────────────────────────────────────────
@@ -66,6 +94,83 @@ export async function updateSKU(cwpn, updates) {
   store.skus[idx] = { ...store.skus[idx], ...updates }
   saveStore(store)
   return store.skus[idx]
+}
+
+// ── SERIAL REGISTRY ───────────────────────────────────────────────
+
+export async function getSerialRegistry(cwpn, siteId) {
+  const store = getStore()
+  const registry = store.serialRegistry || {}
+  const key = siteId ? `${cwpn}:${siteId}` : cwpn
+  if (siteId) {
+    return registry[key] || []
+  }
+  // Return all serials for this CWPN across all sites
+  return Object.entries(registry)
+    .filter(([k]) => k.startsWith(`${cwpn}:`))
+    .flatMap(([k, serials]) => {
+      const site = k.split(':')[1]
+      return serials.map(s => ({ ...s, siteId: site }))
+    })
+}
+
+export async function importSerialRegistry(data, userInfo) {
+  const store = getStore()
+  if (!store.serialRegistry) store.serialRegistry = {}
+
+  let imported = 0
+  data.forEach(({ cwpn, serial, siteId, bin }) => {
+    const key = `${cwpn}:${siteId}`
+    if (!store.serialRegistry[key]) store.serialRegistry[key] = []
+    const exists = store.serialRegistry[key].find(s => s.serial === serial)
+    if (!exists) {
+      store.serialRegistry[key].push({
+        serial,
+        bin: bin || null,
+        importedAt: new Date().toISOString(),
+        importedBy: userInfo ? { email: userInfo.email, name: userInfo.name } : null,
+        lastSeenAt: null,
+        lastSeenBy: null,
+      })
+      imported++
+    }
+  })
+
+  saveStore(store)
+  await logAudit('import_completed', {
+    type: 'serial_registry',
+    totalRecords: data.length,
+    newRecords: imported,
+    duplicatesSkipped: data.length - imported,
+  }, userInfo)
+
+  return { imported, skipped: data.length - imported }
+}
+
+export async function updateSerialSighting(cwpn, siteId, serial, userInfo) {
+  const store = getStore()
+  if (!store.serialRegistry) store.serialRegistry = {}
+  const key = `${cwpn}:${siteId}`
+  if (!store.serialRegistry[key]) store.serialRegistry[key] = []
+
+  const existing = store.serialRegistry[key].find(s => s.serial === serial)
+  if (existing) {
+    existing.lastSeenAt = new Date().toISOString()
+    existing.lastSeenBy = userInfo ? { email: userInfo.email, name: userInfo.name } : null
+  } else {
+    // New serial discovered during count
+    store.serialRegistry[key].push({
+      serial,
+      bin: null,
+      importedAt: null,
+      importedBy: null,
+      discoveredDuringCount: true,
+      lastSeenAt: new Date().toISOString(),
+      lastSeenBy: userInfo ? { email: userInfo.email, name: userInfo.name } : null,
+    })
+  }
+  saveStore(store)
+  return store.serialRegistry[key]
 }
 
 // ── SESSIONS ──────────────────────────────────────────────────────
@@ -106,16 +211,28 @@ export async function createSession(sessionData) {
     approvedBy: null,
     accuracy: null,
     duration: null,
+    recountRequests: [],
     summary: {
       totalItems: 0,
       matched: 0,
       variances: 0,
       quarantined: 0,
       notCounted: 0,
+      recountsPending: 0,
+      escalated: 0,
     },
   }
   store.sessions.push(session)
   saveStore(store)
+
+  await logAudit('session_created', {
+    sessionId: id,
+    siteId: sessionData.siteId,
+    type: sessionData.type,
+    mode: sessionData.mode,
+    collaborative: sessionData.collaborative,
+  }, sessionData.createdBy)
+
   return session
 }
 
@@ -139,10 +256,12 @@ export async function updateSession(id, updates) {
 }
 
 export async function startSession(id, userInfo) {
-  return updateSession(id, {
+  const updated = await updateSession(id, {
     status: 'in_progress',
     startedAt: new Date().toISOString(),
   })
+  await logAudit('session_started', { sessionId: id }, userInfo)
+  return updated
 }
 
 export async function completeSession(id, userInfo) {
@@ -153,20 +272,24 @@ export async function completeSession(id, userInfo) {
   const durationMs = startedAt ? new Date(completedAt) - new Date(startedAt) : null
   const durationMin = durationMs ? Math.round(durationMs / 60000) : null
 
-  return updateSession(id, {
+  const updated = await updateSession(id, {
     status: 'pending_review',
     completedAt,
     completedBy: userInfo,
     duration: durationMin,
   })
+  await logAudit('session_submitted', { sessionId: id, duration: durationMin }, userInfo)
+  return updated
 }
 
 export async function approveSession(id, userInfo) {
-  return updateSession(id, {
+  const updated = await updateSession(id, {
     status: 'approved',
     approvedAt: new Date().toISOString(),
     approvedBy: userInfo,
   })
+  await logAudit('session_approved', { sessionId: id }, userInfo)
+  return updated
 }
 
 export async function claimSection(sessionId, sectionKey, userInfo) {
@@ -194,6 +317,12 @@ export async function claimSection(sessionId, sectionKey, userInfo) {
   const idx = store.sessions.findIndex(s => s.id === sessionId)
   store.sessions[idx] = updated
   saveStore(store)
+
+  await logAudit('section_claimed', {
+    sessionId,
+    sectionKey,
+  }, userInfo)
+
   return updated
 }
 
@@ -223,98 +352,238 @@ export async function updateSectionItems(sessionId, sectionKey, items) {
   return updated
 }
 
-// ── IMPORT ────────────────────────────────────────────────────────
+// ── RECOUNT OPERATIONS ────────────────────────────────────────────
 
-/**
- * Apply imported data to the store.
- * mode: 'update' | 'replace' | 'add_new'
- *   - update:  merge new data into existing sites, update quantities, add new sites/items
- *   - replace: wipe all site and SKU data (preserves sessions), load fresh from import
- *   - add_new: only import sites that don't already exist, skip existing ones
- *
- * NEVER touches sessions — import is purely site + SKU data.
- */
-export async function applyImport(appData, mode = 'update') {
+export async function requestRecount(sessionId, sectionKey, cwpn, requestedBy) {
   const store = getStore()
-  const { sites: importedSites, skus: importedSKUs } = appData
-  const existingSiteIds = new Set(store.sites.map(s => s.id))
+  const idx = store.sessions.findIndex(s => s.id === sessionId)
+  if (idx === -1) throw new Error(`Session ${sessionId} not found`)
 
-  if (mode === 'replace') {
-    // Wipe sites and SKUs, keep sessions
-    store.sites = importedSites
-    store.skus = importedSKUs
-  } else if (mode === 'add_new') {
-    // Only add sites that don't exist
-    const newSites = importedSites.filter(s => !existingSiteIds.has(s.id))
-    store.sites = [...store.sites, ...newSites]
+  const session = store.sessions[idx]
+  const section = session.sections?.[sectionKey]
+  if (!section) throw new Error(`Section ${sectionKey} not found`)
 
-    // For SKUs: add new ones, but don't update existing inventory
-    const existingCWPNs = new Set(store.skus.map(s => s.cwpn))
-    const newSKUs = importedSKUs.filter(s => !existingCWPNs.has(s.cwpn))
-    store.skus = [...store.skus, ...newSKUs]
-  } else {
-    // 'update' — merge
-    // Sites: update existing, add new
-    const siteMap = {}
-    store.sites.forEach(s => { siteMap[s.id] = s })
-    importedSites.forEach(imported => {
-      if (siteMap[imported.id]) {
-        // Merge: keep rooms, update bins/entities
-        siteMap[imported.id] = {
-          ...siteMap[imported.id],
-          bins: [...new Set([...(siteMap[imported.id].bins || []), ...(imported.bins || [])])].sort(),
-          entities: [...new Set([...(siteMap[imported.id].entities || []), ...(imported.entities || [])])].sort(),
-          active: true,
-        }
-      } else {
-        siteMap[imported.id] = imported
-      }
-    })
-    store.sites = Object.values(siteMap).sort((a, b) => a.id.localeCompare(b.id))
+  const item = section.items?.find(i => i.cwpn === cwpn)
+  const currentRound = item?.countRound || 1
+  const nextRound = currentRound + 1
 
-    // SKUs: update inventory quantities, add new items
-    const skuMap = {}
-    store.skus.forEach(s => { skuMap[s.cwpn] = s })
-    importedSKUs.forEach(imported => {
-      if (skuMap[imported.cwpn]) {
-        // Merge inventory: imported quantities overwrite per-site per-bin
-        const merged = { ...skuMap[imported.cwpn].inventory }
-        Object.entries(imported.inventory || {}).forEach(([siteId, bins]) => {
-          merged[siteId] = { ...(merged[siteId] || {}), ...bins }
-        })
-        skuMap[imported.cwpn] = {
-          ...skuMap[imported.cwpn],
-          inventory: merged,
-          category: imported.category || skuMap[imported.cwpn].category,
-          typeName: imported.typeName || skuMap[imported.cwpn].typeName,
-        }
-      } else {
-        skuMap[imported.cwpn] = imported
-      }
-    })
-    store.skus = Object.values(skuMap).sort((a, b) => a.cwpn.localeCompare(b.cwpn))
+  // Get the original counter for this item
+  const originalCounter = item?.countedBy || section.claimedBy
+
+  // Create recount request
+  const recountRequest = {
+    id: `RC-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+    sessionId,
+    sectionKey,
+    cwpn,
+    round: nextRound,
+    previousCount: item?.counted ?? null,
+    previousVariance: item?.variance ?? null,
+    previousCountedBy: originalCounter,
+    requestedBy,
+    requestedAt: new Date().toISOString(),
+    completedBy: null,
+    completedAt: null,
+    newCount: null,
+    status: 'pending',
   }
 
+  // Update the item's recount status
+  const updatedItems = (section.items || []).map(i => {
+    if (i.cwpn === cwpn) {
+      return {
+        ...i,
+        recountStatus: 'recount_pending',
+        recountRound: nextRound,
+        recountRequestId: recountRequest.id,
+        recountExcludedUser: originalCounter?.email || null,
+        // Store previous round data in history
+        countHistory: [
+          ...(i.countHistory || []),
+          {
+            round: currentRound,
+            counted: i.counted,
+            variance: i.variance,
+            countedBy: i.countedBy || originalCounter,
+            countedAt: i.countedAt || new Date().toISOString(),
+            status: i.status,
+          },
+        ],
+      }
+    }
+    return i
+  })
+
+  // Save recount request to session
+  if (!session.recountRequests) session.recountRequests = []
+  session.recountRequests.push(recountRequest)
+
+  const updated = {
+    ...session,
+    sections: {
+      ...session.sections,
+      [sectionKey]: {
+        ...section,
+        items: updatedItems,
+      },
+    },
+  }
+
+  const { summary, accuracy } = calculateSessionStats(updated)
+  updated.summary = summary
+  updated.accuracy = accuracy
+  store.sessions[idx] = updated
   saveStore(store)
 
-  return {
-    sitesCount: store.sites.length,
-    skusCount: store.skus.length,
-    sessionsPreserved: store.sessions.length,
-  }
+  await logAudit('item_recount_requested', {
+    sessionId,
+    sectionKey,
+    cwpn,
+    round: nextRound,
+    previousCount: item?.counted,
+    previousVariance: item?.variance,
+    originalCounter: originalCounter?.email,
+  }, requestedBy)
+
+  return updated
 }
 
-/**
- * Reset to seed data (for development/testing).
- */
-export async function resetStore() {
-  const store = {
-    sites: sitesData,
-    skus: skusData,
-    sessions: [exampleSession],
+export async function submitRecount(sessionId, sectionKey, cwpn, newCount, countedBy, serials) {
+  const store = getStore()
+  const idx = store.sessions.findIndex(s => s.id === sessionId)
+  if (idx === -1) throw new Error(`Session ${sessionId} not found`)
+
+  const session = store.sessions[idx]
+  const section = session.sections?.[sectionKey]
+  if (!section) throw new Error(`Section ${sectionKey} not found`)
+
+  const item = section.items?.find(i => i.cwpn === cwpn)
+  if (!item) throw new Error(`Item ${cwpn} not found in section`)
+
+  // Verify the person doing the recount is NOT the original counter
+  if (item.recountExcludedUser && countedBy?.email === item.recountExcludedUser) {
+    throw new Error('Recount must be performed by a different technician')
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
-  return store
+
+  const expected = item.expected
+  const counted = parseInt(newCount)
+  const variance = counted - expected
+  const status = variance === 0 ? 'matched' : 'variance'
+
+  // Update the item
+  const updatedItems = (section.items || []).map(i => {
+    if (i.cwpn === cwpn) {
+      return {
+        ...i,
+        counted,
+        variance,
+        status,
+        countedBy,
+        countedAt: new Date().toISOString(),
+        countRound: item.recountRound || 2,
+        recountStatus: null,
+        recountRequestId: null,
+        recountExcludedUser: null,
+        // Keep serials if provided
+        ...(serials ? { scannedSerials: serials } : {}),
+      }
+    }
+    return i
+  })
+
+  // Update the recount request
+  const recountRequest = session.recountRequests?.find(
+    r => r.cwpn === cwpn && r.status === 'pending'
+  )
+  if (recountRequest) {
+    recountRequest.status = 'completed'
+    recountRequest.completedBy = countedBy
+    recountRequest.completedAt = new Date().toISOString()
+    recountRequest.newCount = counted
+  }
+
+  const updated = {
+    ...session,
+    sections: {
+      ...session.sections,
+      [sectionKey]: {
+        ...section,
+        items: updatedItems,
+      },
+    },
+  }
+
+  const { summary, accuracy } = calculateSessionStats(updated)
+  updated.summary = summary
+  updated.accuracy = accuracy
+  store.sessions[idx] = updated
+  saveStore(store)
+
+  await logAudit('item_recounted', {
+    sessionId,
+    sectionKey,
+    cwpn,
+    round: item.recountRound || 2,
+    newCount: counted,
+    newVariance: variance,
+    previousCount: item.counted,
+  }, countedBy)
+
+  return updated
+}
+
+export async function escalateItem(sessionId, sectionKey, cwpn, escalatedBy, reason) {
+  const store = getStore()
+  const idx = store.sessions.findIndex(s => s.id === sessionId)
+  if (idx === -1) throw new Error(`Session ${sessionId} not found`)
+
+  const session = store.sessions[idx]
+  const section = session.sections?.[sectionKey]
+
+  const updatedItems = (section.items || []).map(i => {
+    if (i.cwpn === cwpn) {
+      return {
+        ...i,
+        status: 'escalated',
+        recountStatus: null,
+        escalation: {
+          escalatedBy,
+          escalatedAt: new Date().toISOString(),
+          reason: reason || 'Variance persists after maximum recounts',
+          resolvedBy: null,
+          resolvedAt: null,
+          resolution: null,
+        },
+      }
+    }
+    return i
+  })
+
+  const updated = {
+    ...session,
+    sections: {
+      ...session.sections,
+      [sectionKey]: {
+        ...section,
+        items: updatedItems,
+      },
+    },
+  }
+
+  const { summary, accuracy } = calculateSessionStats(updated)
+  updated.summary = summary
+  updated.accuracy = accuracy
+  store.sessions[idx] = updated
+  saveStore(store)
+
+  await logAudit('item_escalated', {
+    sessionId,
+    sectionKey,
+    cwpn,
+    reason,
+  }, escalatedBy)
+
+  return updated
 }
 
 // ── ANALYTICS ─────────────────────────────────────────────────────
@@ -335,12 +604,14 @@ function calculateSessionStats(session) {
   const matched      = allItems.filter(i => i.status === 'matched').length
   const variances    = allItems.filter(i => i.status === 'variance').length
   const quarantined  = allItems.filter(i => i.status === 'quarantine').length
+  const escalated    = allItems.filter(i => i.status === 'escalated').length
+  const recountsPending = allItems.filter(i => i.recountStatus === 'recount_pending' || i.recountStatus === 'recount_in_progress').length
   const notCounted   = allItems.filter(i => !i.status || i.status === 'pending').length
-  const counted      = totalItems - notCounted
+  const counted      = totalItems - notCounted - recountsPending
   const accuracy     = counted > 0 ? Math.round((matched / counted) * 1000) / 10 : null
 
   return {
-    summary: { totalItems, matched, variances, quarantined, notCounted },
+    summary: { totalItems, matched, variances, quarantined, notCounted, recountsPending, escalated },
     accuracy,
   }
 }

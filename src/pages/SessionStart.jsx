@@ -29,7 +29,6 @@ export default function SessionStart() {
   const { create, creating } = useCreateSession()
 
   const [siteId,        setSiteId]        = useState(params.get('site') || '')
-  const [entity,        setEntity]        = useState('')
   const [countType,     setCountType]     = useState(COUNT_TYPE.QUICK)
   const [mode,          setMode]          = useState(COUNT_MODE.VISIBLE)
   const [collaborative, setCollaborative] = useState(false)
@@ -41,6 +40,13 @@ export default function SessionStart() {
     if (!siteId && sites.length === 1) setSiteId(sites[0].id)
   }, [sites, siteId])
 
+  // W2W enforces blind mode
+  useEffect(() => {
+    if (countType === COUNT_TYPE.WALL_TO_WALL) {
+      setMode(COUNT_MODE.BLIND)
+    }
+  }, [countType])
+
   const selectedSite = sites.find(s => s.id === siteId)
   const siteBins = selectedSite?.bins || DEFAULT_BINS
 
@@ -51,6 +57,8 @@ export default function SessionStart() {
   const sectionKeys = countType === COUNT_TYPE.CUSTOM
     ? customBins
     : getBinsForCountType(countType, siteBins)
+
+  const isW2W = countType === COUNT_TYPE.WALL_TO_WALL
 
   const canSubmit = !!siteId && !creating && (countType !== COUNT_TYPE.CUSTOM || customBins.length > 0)
 
@@ -65,10 +73,9 @@ export default function SessionStart() {
     const session = await create({
       siteId,
       type: countType,
-      mode,
+      mode: isW2W ? COUNT_MODE.BLIND : mode,
       collaborative,
       notes,
-      entity: entity || null,
       scheduledDate: scheduledDate || null,
       customBins: countType === COUNT_TYPE.CUSTOM ? customBins : null,
       siteBins,
@@ -96,7 +103,7 @@ export default function SessionStart() {
           <select
             className="site-select"
             value={siteId}
-            onChange={e => { setSiteId(e.target.value); setCustomBins([]); setEntity('') }}
+            onChange={e => { setSiteId(e.target.value); setCustomBins([]) }}
           >
             <option value="">Select a site...</option>
             {regions.map(region => (
@@ -137,29 +144,6 @@ export default function SessionStart() {
           )}
         </div>
 
-        {/* Entity selector (only shown if site has multiple entities) */}
-        {selectedSite?.entities?.length > 0 && (
-          <div className="card">
-            <h3 className="card-section-title">Legal entity (optional)</h3>
-            <select
-              className="site-select"
-              value={entity}
-              onChange={e => setEntity(e.target.value)}
-            >
-              <option value="">All entities</option>
-              {selectedSite.entities.map(ent => (
-                <option key={ent} value={ent}>{ent}</option>
-              ))}
-            </select>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>
-              {entity
-                ? `Count will be scoped to items under ${entity} at ${selectedSite.name}`
-                : `Count will include items from all ${selectedSite.entities.length} entities at this site`
-              }
-            </div>
-          </div>
-        )}
-
         {/* Count type */}
         <div className="card">
           <h3 className="card-section-title">Count type</h3>
@@ -174,7 +158,14 @@ export default function SessionStart() {
                   {countType === type.key && <div className="type-radio-dot" />}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div className="type-label">{type.label}</div>
+                  <div className="type-label">
+                    {type.label}
+                    {type.key === COUNT_TYPE.WALL_TO_WALL && (
+                      <span className="badge badge-amber" style={{ marginLeft: 8, fontSize: 10 }}>
+                        Blind mode enforced
+                      </span>
+                    )}
+                  </div>
                   <div className="type-desc">{type.desc}</div>
                   {type.key !== COUNT_TYPE.CUSTOM && siteId && (
                     <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
@@ -222,6 +213,14 @@ export default function SessionStart() {
         {/* Count mode */}
         <div className="card">
           <h3 className="card-section-title">Count mode</h3>
+          {isW2W && (
+            <div className="alert alert-amber" style={{ marginBottom: 12 }}>
+              <div className="alert-dot" style={{ background: 'var(--amber)' }} />
+              <div style={{ fontSize: 12 }}>
+                <strong>Blind mode is enforced</strong> for wall-to-wall counts. Expected quantities are hidden from counters to ensure unbiased results.
+              </div>
+            </div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
               { key: COUNT_MODE.VISIBLE, label: 'Visible count', desc: 'Expected quantities shown during count. Faster, good for regular checks.' },
@@ -229,8 +228,9 @@ export default function SessionStart() {
             ].map(m => (
               <div
                 key={m.key}
-                className={`type-option${mode === m.key ? ' selected' : ''}`}
-                onClick={() => setMode(m.key)}
+                className={`type-option${mode === m.key ? ' selected' : ''}${isW2W && m.key === COUNT_MODE.VISIBLE ? ' disabled' : ''}`}
+                onClick={() => { if (!isW2W || m.key === COUNT_MODE.BLIND) setMode(m.key) }}
+                style={isW2W && m.key === COUNT_MODE.VISIBLE ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
               >
                 <div className="type-radio">
                   {mode === m.key && <div className="type-radio-dot" />}
@@ -316,17 +316,11 @@ export default function SessionStart() {
             <div className="session-summary-details">
               <span><strong>{selectedSite?.name || 'Select a site'}</strong></span>
               <span style={{ opacity:.6 }}>/</span>
-              <span style={{ textTransform:'capitalize' }}>{countType} count</span>
+              <span style={{ textTransform:'capitalize' }}>{countType.replace(/_/g, ' ')} count</span>
               <span style={{ opacity:.6 }}>/</span>
-              <span style={{ textTransform:'capitalize' }}>{mode}</span>
+              <span style={{ textTransform:'capitalize' }}>{isW2W ? 'Blind (enforced)' : mode}</span>
               <span style={{ opacity:.6 }}>/</span>
               <span>{collaborative ? 'Collaborative' : 'Solo'}</span>
-              {entity && (
-                <>
-                  <span style={{ opacity:.6 }}>/</span>
-                  <span>{entity}</span>
-                </>
-              )}
               {scheduledDate && (
                 <>
                   <span style={{ opacity:.6 }}>/</span>
@@ -337,6 +331,11 @@ export default function SessionStart() {
             <div style={{ fontSize: 12, opacity: .5, marginTop: 6 }}>
               Sections: {sectionKeys.length > 0 ? sectionKeys.map(k => formatBinLabel(k)).join(', ') : 'None selected'}
             </div>
+            {isW2W && (
+              <div style={{ fontSize: 11, opacity: .7, marginTop: 4, color: '#FEC84B' }}>
+                All variances will require recount by a different technician
+              </div>
+            )}
           </div>
           <button className="btn btn-create-session" onClick={handleCreate} disabled={!canSubmit}>
             {creating ? 'Creating session...' : scheduledDate ? 'Schedule count session' : 'Create count session'}

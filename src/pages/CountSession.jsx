@@ -2,9 +2,14 @@
  * CountSession.jsx
  * ─────────────────────────────────────────────────────────────────
  * Orchestrator page for an active count session.
- * All local state logic lives in useCountItems.
- * All UI pieces are imported components.
- * This file only handles layout, routing, and wiring props.
+ * Supports:
+ *   - Blind / visible count modes
+ *   - Quantity and serial-tracked items
+ *   - Multi-round recount flow (different tech per round)
+ *   - Variance flagging with reason codes
+ *   - Escalation after max recounts
+ *   - Collaborative section claiming
+ *   - Report export
  * ─────────────────────────────────────────────────────────────────
  */
 
@@ -21,9 +26,11 @@ import SectionNav from '../components/SectionNav'
 import CountTable from '../components/CountTable'
 import FlagModal from '../components/FlagModal'
 import ReportModal from '../components/ReportModal'
+import AuditTrailPanel from '../components/AuditTrailPanel'
 import {
   SESSION_STATUS,
   COUNT_MODE,
+  COUNT_TYPE,
   BIN_COLORS,
   EDITABLE_STATUSES,
   EXPORTABLE_STATUSES,
@@ -39,6 +46,7 @@ export default function CountSession() {
   const {
     session, loading, saving, error,
     claim, saveItems, completeSection, submit, approve,
+    requestRecount, submitRecount, escalateItem,
     startPolling, stopPolling,
   } = useSession(sessionId)
 
@@ -46,6 +54,7 @@ export default function CountSession() {
 
   // ── Section navigation ───────────────────────────────────────
   const [activeSection, setActiveSection] = useState(null)
+  const [showAuditTrail, setShowAuditTrail] = useState(false)
 
   useEffect(() => {
     if (session && !activeSection) {
@@ -62,6 +71,7 @@ export default function CountSession() {
 
   // ── Derived state ────────────────────────────────────────────
   const isBlind    = session?.mode === COUNT_MODE.BLIND
+  const isW2W      = session?.type === COUNT_TYPE.WALL_TO_WALL
   const isReadOnly = !EDITABLE_STATUSES.includes(session?.status)
   const canExport  = EXPORTABLE_STATUSES.includes(session?.status)
   const currentSection = session?.sections?.[activeSection]
@@ -72,8 +82,9 @@ export default function CountSession() {
 
   // ── Count items hook ─────────────────────────────────────────
   const {
-    items, stats, dirty, localCounts, itemFlags,
-    handleCountChange, handleRecount, setFlag, flushSave,
+    items, stats, dirty, localCounts, localSerials, itemFlags,
+    handleCountChange, handleSerialScanned, handleSerialRemoved,
+    handleRecount, setFlag, flushSave,
   } = useCountItems({
     session,
     activeSection,
@@ -91,6 +102,21 @@ export default function CountSession() {
 
   const handleFlagSubmit = (cwpn, flagData) => {
     setFlag(cwpn, flagData)
+  }
+
+  // ── Recount operations ───────────────────────────────────────
+  const handleRequestRecount = async (cwpn) => {
+    await flushSave()
+    await requestRecount(activeSection, cwpn)
+  }
+
+  const handleSubmitRecount = async (cwpn, value) => {
+    await submitRecount(activeSection, cwpn, value)
+  }
+
+  const handleEscalate = async (cwpn) => {
+    await flushSave()
+    await escalateItem(activeSection, cwpn)
   }
 
   // ── Section operations ───────────────────────────────────────
@@ -112,6 +138,13 @@ export default function CountSession() {
     }
     return 'N/A'
   }
+
+  // ── Pending recounts count ───────────────────────────────────
+  const totalRecountsPending = session
+    ? Object.values(session.sections || {}).reduce((sum, sec) => {
+        return sum + (sec.items || []).filter(i => i.recountStatus === 'recount_pending').length
+      }, 0)
+    : 0
 
   // ── Loading / error states ───────────────────────────────────
   if (loading) {
@@ -154,6 +187,7 @@ export default function CountSession() {
                 </span>
               )}
               {isBlind && <span className="badge badge-purple">Blind count</span>}
+              {isW2W && <span className="badge badge-amber">Wall-to-wall</span>}
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
               {session.siteId} / {session.type} / Created by {session.createdBy?.name || 'Unknown'}
@@ -164,6 +198,13 @@ export default function CountSession() {
         <div className="flex-center gap-2">
           {saving && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Saving...</span>}
           {dirty && <span style={{ fontSize: 12, color: 'var(--amber)' }}>Unsaved</span>}
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setShowAuditTrail(!showAuditTrail)}
+            style={{ fontSize: 12 }}
+          >
+            {showAuditTrail ? 'Hide' : 'Show'} audit trail
+          </button>
           {canExport && (
             <button className="btn btn-sm" onClick={() => setReportOpen(true)}>
               Download report
@@ -187,6 +228,20 @@ export default function CountSession() {
         </div>
       </div>
 
+      {/* Recount alert banner */}
+      {totalRecountsPending > 0 && (
+        <div className="alert alert-amber" style={{ marginBottom: 'var(--sp-4)' }}>
+          <div className="alert-dot" style={{ background: 'var(--amber)' }} />
+          <div>
+            <strong>{totalRecountsPending} item{totalRecountsPending !== 1 ? 's' : ''} awaiting independent recount (Round 3)</strong>
+            {' / '}
+            <span style={{ fontSize: 12 }}>
+              A different technician must perform the recount for separation of duties
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Stats row */}
       <div className="grid-4 mb-4">
         <StatCard label="Section items" value={stats.total} />
@@ -194,7 +249,7 @@ export default function CountSession() {
         <StatCard
           label="Variances" value={stats.variances}
           accent={stats.variances > 0 ? 'var(--red)' : undefined}
-          sub={stats.flagged > 0 ? `${stats.flagged} flagged` : undefined}
+          sub={stats.flagged > 0 ? `${stats.flagged} flagged` : stats.recountsPending > 0 ? `${stats.recountsPending} recount pending` : undefined}
         />
         <StatCard
           label="Duration" value={getDuration()}
@@ -216,6 +271,11 @@ export default function CountSession() {
             <div className="progress-fill" style={{ width: `${stats.pct}%`, background: secColor }} />
           </div>
         </div>
+      )}
+
+      {/* Audit trail panel */}
+      {showAuditTrail && (
+        <AuditTrailPanel sessionId={sessionId} />
       )}
 
       {/* Main layout */}
@@ -250,6 +310,16 @@ export default function CountSession() {
             </div>
           )}
 
+          {/* W2W info */}
+          {isW2W && (
+            <div className="alert alert-amber" style={{ marginBottom: 0 }}>
+              <div className="alert-dot" style={{ background: 'var(--amber)' }} />
+              <div>
+                <strong>Wall-to-wall count</strong> - blind mode enforced, all variances require recount by a different technician before submission
+              </div>
+            </div>
+          )}
+
           {/* Scan bar */}
           {canEdit && (
             <ScanBar skus={skus} sectionColor={secColor} />
@@ -265,9 +335,15 @@ export default function CountSession() {
             canEdit={canEdit}
             saving={saving}
             localCounts={localCounts}
+            currentUser={user}
             onCountChange={handleCountChange}
             onRecount={handleRecount}
             onFlag={openFlagModal}
+            onRequestRecount={handleRequestRecount}
+            onSubmitRecount={handleSubmitRecount}
+            onEscalate={handleEscalate}
+            onSerialScanned={handleSerialScanned}
+            onSerialRemoved={handleSerialRemoved}
             onCompleteSection={handleCompleteSection}
           />
         </div>

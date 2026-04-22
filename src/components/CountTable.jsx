@@ -1,14 +1,24 @@
 /**
  * CountTable.jsx
+ * ─────────────────────────────────────────────────────────────────
  * The core counting table for a session section.
- * Displays items with editable quantity inputs, variance badges,
- * and action buttons (recount, flag).
+ * Handles two item types:
+ *   - Quantity items: editable qty input, live variance
+ *   - Serial-tracked items: serial scan panel, auto-count
+ *
+ * Supports recount rounds:
+ *   - Round 1: initial count (blind or visible)
+ *   - Round 2+: recount by different technician
+ *   - Escalation after max rounds
+ * ─────────────────────────────────────────────────────────────────
  */
 
 import { VarianceBadge } from './Badge'
+import SerialScanPanel from './SerialScanPanel'
 import {
   ITEM_STATUS,
   BIN_COLORS,
+  MAX_RECOUNT_ROUNDS,
   getVarianceReasonLabel,
   getItemRowClass,
   formatBinLabel,
@@ -23,13 +33,24 @@ export default function CountTable({
   canEdit,
   saving,
   localCounts,
+  currentUser,
   onCountChange,
   onRecount,
   onFlag,
+  onRequestRecount,
+  onSubmitRecount,
+  onEscalate,
+  onSerialScanned,
+  onSerialRemoved,
   onCompleteSection,
 }) {
   const secColor = BIN_COLORS[activeSection] || 'var(--border-2)'
   const secLabel = formatBinLabel(activeSection)
+
+  // Check if there are pending recounts for this user
+  const pendingRecounts = items.filter(
+    i => i.recountStatus === 'recount_pending' && i.recountExcludedUser !== currentUser?.email
+  )
 
   return (
     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -43,14 +64,21 @@ export default function CountTable({
         <div style={{ width: 10, height: 10, borderRadius: '50%', background: secColor }} />
         <span style={{ fontWeight: 700, fontSize: 13 }}>{secLabel}</span>
         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{items.length} items</span>
+        {pendingRecounts.length > 0 && (
+          <span className="badge badge-amber" style={{ fontSize: 10 }}>
+            {pendingRecounts.length} recount{pendingRecounts.length !== 1 ? 's' : ''} available
+          </span>
+        )}
         <div style={{ flex: 1 }} />
         {canEdit && (
           <button
             className="btn btn-success btn-sm"
             onClick={onCompleteSection}
-            disabled={saving || stats.pending > 0}
+            disabled={saving || stats.pending > 0 || stats.recountsPending > 0}
             title={stats.pending > 0
               ? `${stats.pending} items still pending`
+              : stats.recountsPending > 0
+              ? `${stats.recountsPending} recounts pending`
               : 'Mark section complete'
             }
           >
@@ -66,9 +94,11 @@ export default function CountTable({
             <tr>
               <th>CWPN</th>
               <th>Description</th>
+              <th style={{ textAlign: 'center', width: 44 }}>Type</th>
               {!isBlind && <th style={{ textAlign: 'center' }}>Expected</th>}
               <th style={{ textAlign: 'center' }}>On hand</th>
               <th style={{ textAlign: 'center' }}>Variance</th>
+              <th style={{ textAlign: 'center' }}>Round</th>
               <th style={{ textAlign: 'center' }}>Actions</th>
             </tr>
           </thead>
@@ -76,7 +106,7 @@ export default function CountTable({
             {items.length === 0 && (
               <tr>
                 <td
-                  colSpan={isBlind ? 5 : 6}
+                  colSpan={isBlind ? 7 : 8}
                   style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 32 }}
                 >
                   No items in this section
@@ -90,10 +120,16 @@ export default function CountTable({
                 isBlind={isBlind}
                 isReadOnly={isReadOnly}
                 canEdit={canEdit}
+                currentUser={currentUser}
                 localCount={localCounts[item.cwpn]}
                 onCountChange={onCountChange}
                 onRecount={onRecount}
                 onFlag={onFlag}
+                onRequestRecount={onRequestRecount}
+                onSubmitRecount={onSubmitRecount}
+                onEscalate={onEscalate}
+                onSerialScanned={onSerialScanned}
+                onSerialRemoved={onSerialRemoved}
               />
             ))}
           </tbody>
@@ -106,6 +142,7 @@ export default function CountTable({
         borderTop: '1px solid var(--border)',
         display: 'flex', gap: 16, alignItems: 'center',
         background: 'var(--surface-2)',
+        flexWrap: 'wrap',
       }}>
         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
           {isBlind ? 'Blind count: expected quantities hidden' : 'All section quantities visible'}
@@ -114,6 +151,7 @@ export default function CountTable({
         {[
           ['var(--green-light)', 'var(--green-text)', 'Matched'],
           ['var(--red-light)', 'var(--red-text)', 'Variance'],
+          ['var(--amber-light)', 'var(--amber-text)', 'Recount'],
           ['var(--purple-light)', 'var(--purple-text)', 'Flagged'],
           ['var(--surface-2)', 'var(--text-muted)', 'Pending'],
         ].map(([bg, c, label]) => (
@@ -131,9 +169,31 @@ export default function CountTable({
 }
 
 
-function CountRow({ item, isBlind, isReadOnly, canEdit, localCount, onCountChange, onRecount, onFlag }) {
+function CountRow({
+  item, isBlind, isReadOnly, canEdit, currentUser,
+  localCount, onCountChange, onRecount, onFlag,
+  onRequestRecount, onSubmitRecount, onEscalate,
+  onSerialScanned, onSerialRemoved,
+}) {
   const rowClass = getItemRowClass(item)
   const reasonLabel = item.flag ? getVarianceReasonLabel(item.flag.reason) : null
+  const isSerialTracked = item.serialTracked
+  const isRecountPending = item.recountStatus === 'recount_pending'
+  const isEscalated = item.status === ITEM_STATUS.ESCALATED
+  const round = item.countRound || 1
+
+  // Round logic:
+  //   Round 1 = initial count
+  //   Round 2 = self-recount (same tech corrects their own error)
+  //   Round 3 = independent recount (different tech, separation of duties)
+  //   After Round 3 = escalate to manager
+  const needsSelfRecount = round === 1 // after round 1, next step is self-recount
+  const needsIndependentRecount = round === 2 // after round 2, next step is different-tech recount
+  const canEscalate = round >= MAX_RECOUNT_ROUNDS // after round 3, can escalate
+
+  // For independent recount (round 3): can this user do it?
+  const canDoRecount = isRecountPending && currentUser?.email !== item.recountExcludedUser
+  const isExcludedFromRecount = isRecountPending && currentUser?.email === item.recountExcludedUser
 
   return (
     <tr className={rowClass}>
@@ -152,14 +212,72 @@ function CountRow({ item, isBlind, isReadOnly, canEdit, localCount, onCountChang
             )}
           </div>
         )}
+        {isEscalated && item.escalation && (
+          <div style={{ marginTop: 3 }}>
+            <span className="badge badge-red" style={{ fontSize: 9 }}>
+              Escalated: {item.escalation.reason}
+            </span>
+          </div>
+        )}
+        {/* Show count history if recounted */}
+        {item.countHistory && item.countHistory.length > 0 && (
+          <div style={{ marginTop: 4 }}>
+            {item.countHistory.map((h, i) => (
+              <div key={i} style={{ fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                Round {h.round}: counted {h.counted ?? '/'} by {h.countedBy?.name || 'Unknown'}
+                {h.variance != null && h.variance !== 0 && (
+                  <span style={{ color: 'var(--red-text)' }}> (var: {h.variance > 0 ? '+' : ''}{h.variance})</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </td>
+
+      {/* Type indicator */}
+      <td style={{ textAlign: 'center' }}>
+        {isSerialTracked ? (
+          <span className="badge badge-blue" style={{ fontSize: 9 }}>SN</span>
+        ) : (
+          <span className="badge badge-gray" style={{ fontSize: 9 }}>QTY</span>
+        )}
       </td>
 
       {!isBlind && (
         <td style={{ textAlign: 'center', fontWeight: 700 }}>{item.expected}</td>
       )}
 
+      {/* On hand / count input */}
       <td style={{ textAlign: 'center' }}>
-        {canEdit ? (
+        {isSerialTracked ? (
+          <SerialScanPanel
+            item={item}
+            expectedSerials={item.expectedSerials || []}
+            scannedSerials={item.scannedSerials || []}
+            canEdit={canEdit && !isRecountPending && !isEscalated}
+            onSerialScanned={(serial, isExpected) => onSerialScanned?.(item.cwpn, serial, isExpected)}
+            onSerialRemoved={(serial) => onSerialRemoved?.(item.cwpn, serial)}
+          />
+        ) : isRecountPending && canDoRecount ? (
+          <input
+            id={`qty-${item.cwpn}`}
+            className="input input-sm input-qty"
+            style={{ borderColor: 'var(--amber)', background: 'var(--amber-light)' }}
+            type="number"
+            min="0"
+            placeholder="..."
+            onChange={e => {
+              if (e.target.value !== '') {
+                onSubmitRecount?.(item.cwpn, e.target.value)
+              }
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && e.target.value !== '') {
+                onSubmitRecount?.(item.cwpn, e.target.value)
+              }
+            }}
+          />
+        ) : canEdit && !isRecountPending && !isEscalated ? (
           <input
             id={`qty-${item.cwpn}`}
             className={`input input-sm input-qty ${
@@ -175,24 +293,88 @@ function CountRow({ item, isBlind, isReadOnly, canEdit, localCount, onCountChang
           />
         ) : (
           <span style={{ fontWeight: 600 }}>
-            {item.counted !== '' ? item.counted : '...'}
+            {item.counted !== '' && item.counted != null ? item.counted : '...'}
           </span>
         )}
       </td>
 
       <td style={{ textAlign: 'center' }}>
-        <VarianceBadge variance={item.variance} />
+        {isRecountPending ? (
+          <span className="badge badge-amber" style={{ fontSize: 10 }}>Recount</span>
+        ) : (
+          <VarianceBadge variance={item.variance} />
+        )}
+      </td>
+
+      {/* Round indicator */}
+      <td style={{ textAlign: 'center' }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 22, height: 22, borderRadius: '50%',
+          background: round > 1 ? 'var(--amber-light)' : 'var(--surface-2)',
+          color: round > 1 ? 'var(--amber-text)' : 'var(--text-muted)',
+          fontSize: 10, fontWeight: 700,
+        }}>
+          {round}
+        </span>
       </td>
 
       <td style={{ textAlign: 'center' }}>
-        {canEdit && item.status === ITEM_STATUS.VARIANCE && (
+        {/* Round 3 recount pending — different tech enters count */}
+        {isRecountPending && canDoRecount && (
           <div className="variance-actions">
-            <button
-              className="variance-btn variance-btn-recount"
-              onClick={() => onRecount(item.cwpn)}
-            >
-              Recount
-            </button>
+            <span style={{ fontSize: 10, color: 'var(--amber-text)', fontWeight: 600 }}>
+              Enter independent recount
+            </span>
+          </div>
+        )}
+        {isRecountPending && isExcludedFromRecount && (
+          <div style={{ fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+            Awaiting recount by another tech
+          </div>
+        )}
+
+        {/* Escalated state */}
+        {isEscalated && (
+          <span style={{ fontSize: 10, color: 'var(--red-text)', fontWeight: 600 }}>
+            Awaiting resolution
+          </span>
+        )}
+
+        {/* Variance actions — depends on which round we're in */}
+        {canEdit && item.status === ITEM_STATUS.VARIANCE && !isRecountPending && !isEscalated && (
+          <div className="variance-actions">
+            {needsSelfRecount && (
+              /* Round 1 → Round 2: same tech recounts themselves */
+              <button
+                className="variance-btn variance-btn-recount"
+                onClick={() => onRecount(item.cwpn)}
+                title="Recount this item yourself (Round 2)"
+              >
+                Recount
+              </button>
+            )}
+            {needsIndependentRecount && (
+              /* Round 2 → Round 3: request recount by different tech */
+              <button
+                className="variance-btn variance-btn-recount"
+                onClick={() => onRequestRecount?.(item.cwpn)}
+                title="Request independent recount by a different technician (Round 3)"
+              >
+                Request independent recount
+              </button>
+            )}
+            {canEscalate && (
+              /* After Round 3: escalate to manager */
+              <button
+                className="variance-btn"
+                style={{ borderColor: 'var(--red)', color: 'var(--red-text)', background: 'var(--red-light)' }}
+                onClick={() => onEscalate?.(item.cwpn)}
+                title="Escalate to manager for investigation"
+              >
+                Escalate
+              </button>
+            )}
             <button
               className={`variance-btn ${item.flag ? 'variance-btn-flagged' : 'variance-btn-flag'}`}
               onClick={() => onFlag(item)}
@@ -201,16 +383,19 @@ function CountRow({ item, isBlind, isReadOnly, canEdit, localCount, onCountChang
             </button>
           </div>
         )}
-        {item.status === ITEM_STATUS.MATCHED && (
-          <span style={{ fontSize: 10, color: 'var(--green-text)' }}>OK</span>
-        )}
-        {item.status === ITEM_STATUS.PENDING && (
-          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>...</span>
-        )}
-        {isReadOnly && item.status === ITEM_STATUS.VARIANCE && (
+
+        {/* Read-only variance display */}
+        {isReadOnly && item.status === ITEM_STATUS.VARIANCE && !isEscalated && (
           item.flag
             ? <span className="badge badge-purple" style={{ fontSize: 9 }}>{reasonLabel}</span>
             : <span style={{ fontSize: 10, color: 'var(--red-text)' }}>Unflagged</span>
+        )}
+
+        {item.status === ITEM_STATUS.MATCHED && (
+          <span style={{ fontSize: 10, color: 'var(--green-text)' }}>OK</span>
+        )}
+        {item.status === ITEM_STATUS.PENDING && !isRecountPending && (
+          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>...</span>
         )}
       </td>
     </tr>

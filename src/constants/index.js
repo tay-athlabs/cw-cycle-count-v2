@@ -47,6 +47,9 @@ export const ITEM_STATUS = {
   MATCHED: 'matched',
   VARIANCE: 'variance',
   QUARANTINE: 'quarantine',
+  RECOUNT_PENDING: 'recount_pending',
+  RECOUNT_IN_PROGRESS: 'recount_in_progress',
+  ESCALATED: 'escalated',
 }
 
 // ── COUNT MODES ───────────────────────────────────────────────────
@@ -63,6 +66,7 @@ export const COUNT_TYPE = {
   STANDARD: 'standard',
   FULL: 'full',
   CUSTOM: 'custom',
+  WALL_TO_WALL: 'wall_to_wall',
 }
 
 export const COUNT_TYPE_CONFIG = [
@@ -85,12 +89,34 @@ export const COUNT_TYPE_CONFIG = [
     color: 'var(--red)',
   },
   {
+    key: COUNT_TYPE.WALL_TO_WALL,
+    label: 'Wall-to-wall count',
+    desc: 'All bins, blind mode enforced. Full audit trail with mandatory recount on variances. For SOX compliance and formal audits.',
+    color: 'var(--amber)',
+  },
+  {
     key: COUNT_TYPE.CUSTOM,
     label: 'Custom count',
     desc: 'Choose specific bins, categories, or SKUs to count.',
-    color: 'var(--amber)',
+    color: 'var(--text-muted)',
   },
 ]
+
+// ── RECOUNT ROUNDS ────────────────────────────────────────────────
+
+export const RECOUNT_ROUND = {
+  ROUND_1: 1,
+  ROUND_2: 2,
+  ROUND_3: 3,
+}
+
+export const MAX_RECOUNT_ROUNDS = 3
+
+export const RECOUNT_STATUS = {
+  PENDING: 'recount_pending',
+  IN_PROGRESS: 'recount_in_progress',
+  COMPLETED: 'recount_completed',
+}
 
 // ── BINS ──────────────────────────────────────────────────────────
 
@@ -135,9 +161,10 @@ export const DEFAULT_BINS = [
 export function getBinsForCountType(type, siteBins) {
   const bins = siteBins || DEFAULT_BINS
   const map = {
-    [COUNT_TYPE.QUICK]:    bins.filter(b => b === BIN.STORED),
-    [COUNT_TYPE.STANDARD]: bins.filter(b => [BIN.STORED, BIN.IN_PROCESS, BIN.SPARES].includes(b)),
-    [COUNT_TYPE.FULL]:     bins,
+    [COUNT_TYPE.QUICK]:        bins.filter(b => b === BIN.STORED),
+    [COUNT_TYPE.STANDARD]:     bins.filter(b => [BIN.STORED, BIN.IN_PROCESS, BIN.SPARES].includes(b)),
+    [COUNT_TYPE.FULL]:         bins,
+    [COUNT_TYPE.WALL_TO_WALL]: bins,
   }
   return map[type] || [BIN.STORED]
 }
@@ -196,9 +223,30 @@ export function getAccuracyVariant(accuracy) {
 
 export function getAccuracyRating(accuracy) {
   if (accuracy == null) return 'N/A'
-  if (accuracy >= ACCURACY.TARGET) return '⭐ Excellent'
-  if (accuracy >= ACCURACY.GOOD) return '👍 Good'
-  return '⚠️ Needs attention'
+  if (accuracy >= ACCURACY.TARGET) return 'Excellent'
+  if (accuracy >= ACCURACY.GOOD) return 'Good'
+  return 'Needs attention'
+}
+
+// ── AUDIT LOG ACTIONS ─────────────────────────────────────────────
+
+export const AUDIT_ACTION = {
+  SESSION_CREATED: 'session_created',
+  SESSION_STARTED: 'session_started',
+  SESSION_SUBMITTED: 'session_submitted',
+  SESSION_APPROVED: 'session_approved',
+  SESSION_REJECTED: 'session_rejected',
+  SECTION_CLAIMED: 'section_claimed',
+  SECTION_COMPLETED: 'section_completed',
+  ITEM_COUNTED: 'item_counted',
+  ITEM_RECOUNT_REQUESTED: 'item_recount_requested',
+  ITEM_RECOUNTED: 'item_recounted',
+  ITEM_FLAGGED: 'item_flagged',
+  ITEM_ESCALATED: 'item_escalated',
+  SERIAL_SCANNED: 'serial_scanned',
+  SERIAL_UNEXPECTED: 'serial_unexpected',
+  SERIAL_MISSING: 'serial_missing',
+  IMPORT_COMPLETED: 'import_completed',
 }
 
 // ── AUTO-SAVE ─────────────────────────────────────────────────────
@@ -211,6 +259,9 @@ export const SCAN_MESSAGE_DURATION_MS = 4000
 // ── TABLE ROW CLASSES ─────────────────────────────────────────────
 
 export function getItemRowClass(item) {
+  if (item.recountStatus === RECOUNT_STATUS.PENDING) return 'row-recount'
+  if (item.recountStatus === RECOUNT_STATUS.IN_PROGRESS) return 'row-recount'
+  if (item.status === ITEM_STATUS.ESCALATED) return 'row-escalated'
   if (item.flag) return 'row-quarantine'
   if (item.status === ITEM_STATUS.MATCHED) return 'row-matched'
   if (item.status === ITEM_STATUS.VARIANCE) return 'row-variance'
