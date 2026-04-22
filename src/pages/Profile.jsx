@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSessionList } from '../hooks/useSession'
 import { SessionStatus, AccuracyBadge } from '../components/Badge'
-import { changeUserRole } from '../services/dataService'
+import { changeUserRole, clearAllSessions, resetStore } from '../services/dataService'
+import { isSuperuser } from '../services/authService'
 import { useAppContext } from '../context/AppContext'
 import {
   ROLE,
@@ -119,6 +120,53 @@ export default function Profile() {
           ))}
         </div>
       </div>
+
+      {/* Superuser controls */}
+      {isSuperuser(user) && (
+        <div className="card mb-6" style={{ borderColor: 'var(--red)', borderWidth: 2 }}>
+          <h3 className="card-section-title">
+            Superuser controls
+            <span className="badge badge-red" style={{ marginLeft: 8, fontSize: 10, verticalAlign: 'middle' }}>
+              Danger zone
+            </span>
+          </h3>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
+            These actions are destructive and cannot be undone. Use for testing and debugging only.
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={async () => {
+                if (!window.confirm('Clear ALL sessions and audit logs? This cannot be undone.')) return
+                try {
+                  const result = await clearAllSessions(user)
+                  showToast(`Cleared ${result.cleared} sessions and all audit logs`, 'warning')
+                  window.location.reload()
+                } catch (err) {
+                  showToast(`Failed: ${err.message}`, 'error')
+                }
+              }}
+            >
+              Clear all sessions and logs
+            </button>
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={async () => {
+                if (!window.confirm('FULL RESET — restore all data to defaults? All sessions, imports, and serial data will be lost.')) return
+                try {
+                  await resetStore(user)
+                  showToast('Store reset to defaults', 'warning')
+                  window.location.reload()
+                } catch (err) {
+                  showToast(`Failed: ${err.message}`, 'error')
+                }
+              }}
+            >
+              Full reset to defaults
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Personal metrics */}
       <div className="grid-4 mb-6">

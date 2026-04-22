@@ -157,25 +157,42 @@ export async function importSerialRegistry(data, userInfo) {
   const store = getStore()
   if (!store.serialRegistry) store.serialRegistry = {}
 
-  let imported = 0
-  data.forEach(({ cwpn, serial, siteId, bin }) => {
-    const key = `${cwpn}:${siteId}`
-    if (!store.serialRegistry[key]) store.serialRegistry[key] = []
-    const exists = store.serialRegistry[key].find(s => s.serial === serial)
-    if (!exists) {
-      store.serialRegistry[key].push({
-        serial,
-        bin: bin || null,
-        importedAt: new Date().toISOString(),
-        importedBy: userInfo ? { email: userInfo.email, name: userInfo.name } : null,
-        lastSeenAt: null,
-        lastSeenBy: null,
-      })
-      imported++
-    }
-  })
+  if (!data || !Array.isArray(data)) {
+    throw new Error('Invalid serial data format')
+  }
 
-  saveStore(store)
+  let imported = 0
+  // Process in batches to avoid localStorage size issues
+  const batchSize = 5000
+  for (let i = 0; i < data.length; i += batchSize) {
+    const batch = data.slice(i, i + batchSize)
+    batch.forEach(({ cwpn, serial, siteId, bin }) => {
+      if (!cwpn || !serial || !siteId) return
+      const key = `${cwpn}:${siteId}`
+      if (!store.serialRegistry[key]) store.serialRegistry[key] = []
+      const exists = store.serialRegistry[key].find(s => s.serial === serial)
+      if (!exists) {
+        store.serialRegistry[key].push({
+          serial,
+          bin: bin || null,
+          importedAt: new Date().toISOString(),
+          importedBy: userInfo ? { email: userInfo.email, name: userInfo.name } : null,
+          lastSeenAt: null,
+          lastSeenBy: null,
+        })
+        imported++
+      }
+    })
+  }
+
+  try {
+    saveStore(store)
+  } catch (e) {
+    // localStorage quota exceeded — trim to fit
+    console.warn('Storage quota exceeded, saving without serial registry')
+    throw new Error(`Storage limit reached after importing ${imported} serials. The browser's localStorage cannot hold all ${data.length} records. In production, this data would be in the database.`)
+  }
+
   await logAudit('import_completed', {
     type: 'serial_registry',
     totalRecords: data.length,
@@ -731,9 +748,32 @@ export async function changeUserRole(targetEmail, newRole, changedBy) {
     newRole,
     changedByEmail: changedBy?.email,
   }, changedBy)
-  // In localStorage prototype, roles are stored on the user object in sessionStorage
-  // In production, this would update the users table
   return { email: targetEmail, role: newRole }
+}
+
+// ── SUPERUSER / ADMIN FUNCTIONS ───────────────────────────────────
+
+export async function clearAllSessions(userInfo) {
+  const store = getStore()
+  const count = store.sessions.length
+  store.sessions = []
+  store.auditLog = []
+  saveStore(store)
+  await logAudit('sessions_cleared', { clearedCount: count }, userInfo)
+  return { cleared: count }
+}
+
+export async function resetStore(userInfo) {
+  const initial = {
+    sites: (await import('../data/sites.json')).default,
+    skus: (await import('../data/skus.json')).default,
+    sessions: [(await import('../data/sessions/example.json')).default],
+    auditLog: [],
+    serialRegistry: {},
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(initial))
+  await logAudit('store_reset', { reason: 'Full reset by superuser' }, userInfo)
+  return initial
 }
 
 // ── ESCALATION RESOLUTION ─────────────────────────────────────────

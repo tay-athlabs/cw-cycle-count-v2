@@ -39,6 +39,14 @@ export const MOCK_USERS = [
     family_name: 'Jones',
     role: 'ics',
   },
+  {
+    email: 'superuser@coreweave.com',
+    name: 'Superuser',
+    picture: null,
+    given_name: 'Super',
+    family_name: 'User',
+    role: 'superuser',
+  },
 ]
 
 // Default mock user (first in list)
@@ -78,9 +86,13 @@ export function clearPersistedUser() {
 }
 
 export function isManager(user) {
-  return user?.role === 'manager' || user?.role === 'admin'
+  return user?.role === 'manager' || user?.role === 'admin' || user?.role === 'superuser'
 }
 
 export function isAdmin(user) {
-  return user?.role === 'admin'
+  return user?.role === 'admin' || user?.role === 'superuser'
+}
+
+export function isSuperuser(user) {
+  return user?.role === 'superuser'
 }

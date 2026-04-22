@@ -199,12 +199,14 @@ export const ROLE = {
   ICS: 'ics',
   MANAGER: 'manager',
   ADMIN: 'admin',
+  SUPERUSER: 'superuser',
 }
 
 export const ROLE_LABELS = {
   [ROLE.ICS]: 'Inventory Control Specialist',
   [ROLE.MANAGER]: 'Inventory Manager',
   [ROLE.ADMIN]: 'Administrator',
+  [ROLE.SUPERUSER]: 'Superuser',
 }
 
 // ── ACCURACY THRESHOLDS ───────────────────────────────────────────
