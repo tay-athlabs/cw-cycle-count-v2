@@ -96,6 +96,45 @@ export async function updateSKU(cwpn, updates) {
   return store.skus[idx]
 }
 
+// ── IMPORT ────────────────────────────────────────────────────────
+
+export async function applyImport(appData) {
+  const store = getStore()
+
+  // Merge sites: update existing, add new
+  if (appData.sites) {
+    appData.sites.forEach(importedSite => {
+      const idx = store.sites.findIndex(s => s.id === importedSite.id)
+      if (idx !== -1) {
+        // Update existing site, preserve rooms and other local data
+        store.sites[idx] = { ...store.sites[idx], ...importedSite, rooms: store.sites[idx].rooms || importedSite.rooms || [] }
+      } else {
+        store.sites.push(importedSite)
+      }
+    })
+  }
+
+  // Merge SKUs: update existing, add new
+  if (appData.skus) {
+    appData.skus.forEach(importedSku => {
+      const idx = store.skus.findIndex(s => s.cwpn === importedSku.cwpn)
+      if (idx !== -1) {
+        // Merge inventory data per site
+        const mergedInventory = { ...store.skus[idx].inventory }
+        Object.entries(importedSku.inventory || {}).forEach(([siteId, bins]) => {
+          mergedInventory[siteId] = { ...(mergedInventory[siteId] || {}), ...bins }
+        })
+        store.skus[idx] = { ...store.skus[idx], ...importedSku, inventory: mergedInventory }
+      } else {
+        store.skus.push(importedSku)
+      }
+    })
+  }
+
+  saveStore(store)
+  return { sites: store.sites.length, skus: store.skus.length }
+}
+
 // ── SERIAL REGISTRY ───────────────────────────────────────────────
 
 export async function getSerialRegistry(cwpn, siteId) {
