@@ -223,9 +223,9 @@ export function getAccuracyVariant(accuracy) {
 
 export function getAccuracyRating(accuracy) {
   if (accuracy == null) return 'N/A'
-  if (accuracy >= ACCURACY.TARGET) return 'Excellent'
-  if (accuracy >= ACCURACY.GOOD) return 'Good'
-  return 'Needs attention'
+  if (accuracy >= ACCURACY.TARGET) return '⭐ Excellent'
+  if (accuracy >= ACCURACY.GOOD) return '👍 Good'
+  return '⚠️ Needs attention'
 }
 
 // ── AUDIT LOG ACTIONS ─────────────────────────────────────────────

@@ -1,0 +1,46 @@
+/* ── ADDITIONS: Recount + Escalation + Serial Tracking ────────── */
+/* Append these to the end of src/styles/index.css                */
+
+/* Recount row highlight */
+tbody tr.row-recount td { background: #FFFAEB; }
+tbody tr.row-escalated td { background: #FEF3F2; }
+
+/* Recount badge in section nav */
+.recount-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 6px; border-radius: var(--r-full);
+  background: var(--amber-light); color: var(--amber-text);
+  font-size: 10px; font-weight: 600;
+}
+
+/* Serial scan panel styling */
+.serial-scan-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: var(--sp-3);
+  background: var(--surface-2);
+}
+
+/* Audit trail timeline connector */
+.audit-entry {
+  position: relative;
+}
+.audit-entry::before {
+  content: '';
+  position: absolute;
+  left: 27px;
+  top: 28px;
+  bottom: -6px;
+  width: 1px;
+  background: var(--border);
+}
+.audit-entry:last-child::before {
+  display: none;
+}
+
+/* W2W badge */
+.badge-w2w {
+  background: var(--amber-light);
+  color: var(--amber-text);
+  border: 1px solid #FEC84B;
+}

@@ -36,6 +36,13 @@ export default function SerialScanPanel({
     }
   }, [expanded, canEdit])
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (msgTimer.current) clearTimeout(msgTimer.current)
+    }
+  }, [])
+
   const showMessage = (type, text) => {
     setScanMsg({ type, text })
     if (msgTimer.current) clearTimeout(msgTimer.current)

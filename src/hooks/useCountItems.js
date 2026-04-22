@@ -20,10 +20,12 @@ export function useCountItems({
   skus,
   saveItems,
   isReadOnly,
+  currentUser,
 }) {
   const [localCounts, setLocalCounts] = useState({})
   const [localSerials, setLocalSerials] = useState({})
   const [itemFlags, setItemFlags]     = useState({})
+  const [selfRecounted, setSelfRecounted] = useState({})
   const [dirty, setDirty]             = useState(false)
   const saveTimer                     = useRef(null)
 
@@ -44,6 +46,7 @@ export function useCountItems({
     setLocalCounts(counts)
     setItemFlags(flags)
     setLocalSerials(serials)
+    setSelfRecounted({})
     setDirty(false)
   }, [session?.id, activeSection, currentSection?.items?.length])
 
@@ -152,12 +155,16 @@ export function useCountItems({
           round: wasSelfRecounted.previousRound,
           counted: wasSelfRecounted.previousCounted,
           variance: wasSelfRecounted.previousVariance,
-          countedBy: item.countedBy || null,
+          countedBy: item.countedBy || (currentUser ? { email: currentUser.email, name: currentUser.name } : null),
           countedAt: new Date().toISOString(),
           status: 'variance',
           type: 'self_recount',
         })
       }
+
+      const hasCounted = item.serialTracked
+        ? (item.scannedSerials?.length || 0) > 0
+        : item.counted !== '' && item.counted != null
 
       return {
         cwpn: item.cwpn,
@@ -177,12 +184,16 @@ export function useCountItems({
         recountRequestId: item.recountRequestId || null,
         countHistory,
         countRound: currentRound,
-        countedBy: item.countedBy || null,
-        countedAt: item.countedAt || null,
+        countedBy: hasCounted
+          ? (item.countedBy || (currentUser ? { email: currentUser.email, name: currentUser.name } : null))
+          : null,
+        countedAt: hasCounted
+          ? (item.countedAt || new Date().toISOString())
+          : null,
         escalation: item.escalation || null,
       }
     })
-  }, [items, itemFlags, selfRecounted])
+  }, [items, itemFlags, selfRecounted, currentUser])
 
   // Auto-save with debounce
   const scheduleAutoSave = useCallback(() => {
@@ -231,8 +242,6 @@ export function useCountItems({
 
   // Self-recount (Round 2): same tech clears their count to try again.
   // Records the previous count in history and bumps the round.
-  const [selfRecounted, setSelfRecounted] = useState({})
-
   const handleRecount = useCallback((cwpn) => {
     // Find the current item to record its previous value
     const item = items.find(i => i.cwpn === cwpn)

@@ -7,7 +7,7 @@
  * ─────────────────────────────────────────────────────────────────
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getAuditLog } from '../services/dataService'
 
 const ACTION_LABELS = {
@@ -33,13 +33,20 @@ export default function AuditTrailPanel({ sessionId }) {
   const [logs, setLogs] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchLogs = useCallback(() => {
     if (!sessionId) return
     getAuditLog({ sessionId })
       .then(setLogs)
       .catch(() => setLogs([]))
       .finally(() => setLoading(false))
   }, [sessionId])
+
+  useEffect(() => {
+    fetchLogs()
+    // Auto-refresh every 10 seconds while panel is open
+    const interval = setInterval(fetchLogs, 10000)
+    return () => clearInterval(interval)
+  }, [fetchLogs])
 
   if (loading) {
     return (
@@ -59,6 +66,10 @@ export default function AuditTrailPanel({ sessionId }) {
       }}>
         <span style={{ fontWeight: 700, fontSize: 13 }}>Audit trail</span>
         <span className="badge badge-gray" style={{ fontSize: 10 }}>{logs.length} entries</span>
+        <div style={{ flex: 1 }} />
+        <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={fetchLogs}>
+          ↻ Refresh
+        </button>
       </div>
 
       <div style={{ maxHeight: 300, overflowY: 'auto' }}>

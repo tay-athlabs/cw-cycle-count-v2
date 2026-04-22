@@ -91,6 +91,7 @@ export default function CountSession() {
     skus,
     saveItems,
     isReadOnly,
+    currentUser: user,
   })
 
   // ── Flag modal state ─────────────────────────────────────────

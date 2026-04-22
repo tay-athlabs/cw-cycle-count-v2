@@ -1,10 +1,10 @@
 /**
  * SectionNav.jsx
  * Sidebar navigation for count session bins/sections.
- * Shows progress, claim status, and optional accuracy ring.
+ * Shows progress, claim status, recount pending count, and optional accuracy ring.
  */
 
-import { BIN_COLORS, BIN_LABELS, SECTION_STATUS, formatBinLabel } from '../constants'
+import { BIN_COLORS, SECTION_STATUS, formatBinLabel } from '../constants'
 
 export default function SectionNav({
   session,
@@ -33,6 +33,9 @@ export default function SectionNav({
           const done = sec?.items?.filter(i =>
             i.status && i.status !== 'pending'
           ).length || 0
+          const recountsPending = sec?.items?.filter(i =>
+            i.recountStatus === 'recount_pending'
+          ).length || 0
           const isCompleted = sec?.status === SECTION_STATUS.COMPLETED
             || sec?.status === SECTION_STATUS.APPROVED
           const isClaimed = !!sec?.claimedBy
@@ -56,6 +59,11 @@ export default function SectionNav({
                   }}
                 />
                 {formatBinLabel(key)}
+                {recountsPending > 0 && (
+                  <span className="badge badge-amber" style={{ fontSize: 9, marginLeft: 4 }}>
+                    {recountsPending} RC
+                  </span>
+                )}
               </div>
               <div className="section-nav-meta">
                 {isCompleted ? 'Complete' : `${done}/${secSKUs.length} counted`}

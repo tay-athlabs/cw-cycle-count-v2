@@ -404,9 +404,17 @@ export async function requestRecount(sessionId, sectionKey, cwpn, requestedBy) {
 
   const item = section.items?.find(i => i.cwpn === cwpn)
   const currentRound = item?.countRound || 1
+
+  if (currentRound >= 3) {
+    throw new Error(`Item ${cwpn} has reached the maximum recount rounds. Escalate instead.`)
+  }
+  if (item?.recountStatus === 'recount_pending') {
+    throw new Error(`Item ${cwpn} already has a pending recount request.`)
+  }
+
   const nextRound = currentRound + 1
 
-  // Get the original counter for this item
+  // Get the original counter for this item — use countedBy if set, fall back to section claimedBy
   const originalCounter = item?.countedBy || section.claimedBy
 
   // Create recount request

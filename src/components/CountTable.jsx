@@ -266,13 +266,14 @@ function CountRow({
             type="number"
             min="0"
             placeholder="..."
-            onChange={e => {
-              if (e.target.value !== '') {
-                onSubmitRecount?.(item.cwpn, e.target.value)
-              }
-            }}
             onKeyDown={e => {
               if (e.key === 'Enter' && e.target.value !== '') {
+                onSubmitRecount?.(item.cwpn, e.target.value)
+                e.target.blur()
+              }
+            }}
+            onBlur={e => {
+              if (e.target.value !== '') {
                 onSubmitRecount?.(item.cwpn, e.target.value)
               }
             }}
