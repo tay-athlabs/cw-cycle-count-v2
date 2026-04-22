@@ -2,12 +2,12 @@
  * useCountItems.js
  * ─────────────────────────────────────────────────────────────────
  * Manages the local counting state for an active section:
- *   - Local count values (optimistic, ahead of server)
- *   - Item derivation (merge SKU data + session data + local edits)
- *   - Variance flag state
- *   - Auto-save with debounce
- *   - Recount and flag operations
- *   - Serial number scanning for serialTracked items
+ *   - Enter-to-confirm: tech types freely, presses Enter to lock
+ *   - Once confirmed, field is locked until Recount is clicked
+ *   - Variance only computed after confirmation
+ *   - Serial-tracked items lock after scan completes
+ *   - Self-recount (Round 2) records history and bumps round
+ *   - Auto-save fires only after confirmation, not on keystroke
  * ─────────────────────────────────────────────────────────────────
  */
 
@@ -22,12 +22,13 @@ export function useCountItems({
   isReadOnly,
   currentUser,
 }) {
-  const [localCounts, setLocalCounts] = useState({})
-  const [localSerials, setLocalSerials] = useState({})
-  const [itemFlags, setItemFlags]     = useState({})
-  const [selfRecounted, setSelfRecounted] = useState({})
-  const [dirty, setDirty]             = useState(false)
-  const saveTimer                     = useRef(null)
+  const [localCounts, setLocalCounts]       = useState({})
+  const [confirmedItems, setConfirmedItems] = useState({})
+  const [localSerials, setLocalSerials]     = useState({})
+  const [itemFlags, setItemFlags]           = useState({})
+  const [selfRecounted, setSelfRecounted]   = useState({})
+  const [dirty, setDirty]                   = useState(false)
+  const saveTimer                           = useRef(null)
 
   const currentSection = session?.sections?.[activeSection]
 
@@ -38,14 +39,20 @@ export function useCountItems({
     const counts = {}
     const flags = {}
     const serials = {}
+    const confirmed = {}
     saved.forEach(item => {
       counts[item.cwpn] = item.counted ?? ''
       if (item.flag) flags[item.cwpn] = item.flag
       if (item.scannedSerials) serials[item.cwpn] = item.scannedSerials
+      // Items that already have a counted value from a previous save are confirmed
+      if (item.counted != null && item.counted !== '' && item.status !== 'pending') {
+        confirmed[item.cwpn] = true
+      }
     })
     setLocalCounts(counts)
     setItemFlags(flags)
     setLocalSerials(serials)
+    setConfirmedItems(confirmed)
     setSelfRecounted({})
     setDirty(false)
   }, [session?.id, activeSection, currentSection?.items?.length])
@@ -65,14 +72,16 @@ export function useCountItems({
       const expected = sku.inventory?.[session?.siteId]?.[activeSection] || 0
       const saved = currentSection?.items?.find(i => i.cwpn === sku.cwpn)
       const isSerialTracked = sku.serialTracked
+      const isConfirmed = !!confirmedItems[sku.cwpn]
 
       let counted, variance, status
 
       if (isSerialTracked) {
         const scannedSerials = localSerials[sku.cwpn] || saved?.scannedSerials || []
         counted = scannedSerials.length
-        variance = counted !== 0 || scannedSerials.length > 0 ? counted - expected : null
-        status = scannedSerials.length === 0
+        // Serial items: variance computes as scans happen (each scan is a confirmation)
+        variance = counted > 0 ? counted - expected : null
+        status = counted === 0
           ? ITEM_STATUS.PENDING
           : variance === 0
             ? ITEM_STATUS.MATCHED
@@ -81,12 +90,14 @@ export function useCountItems({
         counted = localCounts[sku.cwpn] !== undefined
           ? localCounts[sku.cwpn]
           : saved?.counted ?? ''
-        variance = counted !== '' ? parseInt(counted) - expected : null
-        status = counted === ''
-          ? ITEM_STATUS.PENDING
-          : variance === 0
-            ? ITEM_STATUS.MATCHED
-            : ITEM_STATUS.VARIANCE
+        // Only compute variance if the count has been confirmed (Enter pressed)
+        if (isConfirmed && counted !== '') {
+          variance = parseInt(counted) - expected
+          status = variance === 0 ? ITEM_STATUS.MATCHED : ITEM_STATUS.VARIANCE
+        } else {
+          variance = null
+          status = counted !== '' ? 'unconfirmed' : ITEM_STATUS.PENDING
+        }
       }
 
       // Preserve recount status from saved data
@@ -114,6 +125,7 @@ export function useCountItems({
         variance,
         status,
         flag,
+        isConfirmed,
         recountStatus,
         recountRound,
         recountExcludedUser,
@@ -124,14 +136,14 @@ export function useCountItems({
         expectedSerials: isSerialTracked ? (saved?.expectedSerials || []) : undefined,
       }
     })
-  }, [sectionSKUs, session?.siteId, activeSection, currentSection, localCounts, localSerials, itemFlags])
+  }, [sectionSKUs, session?.siteId, activeSection, currentSection, localCounts, confirmedItems, localSerials, itemFlags])
 
-  // Stats
+  // Stats — only count confirmed items
   const stats = useMemo(() => {
     const confirmed = items.filter(i => i.status === ITEM_STATUS.MATCHED).length
     const variances = items.filter(i => i.status === ITEM_STATUS.VARIANCE).length
     const flagged   = items.filter(i => i.flag).length
-    const pending   = items.filter(i => i.status === ITEM_STATUS.PENDING).length
+    const pending   = items.filter(i => i.status === ITEM_STATUS.PENDING || i.status === 'unconfirmed').length
     const recountsPending = items.filter(i => i.recountStatus === 'recount_pending').length
     const escalated = items.filter(i => i.status === ITEM_STATUS.ESCALATED).length
     const total     = items.length
@@ -162,18 +174,22 @@ export function useCountItems({
         })
       }
 
-      const hasCounted = item.serialTracked
-        ? (item.scannedSerials?.length || 0) > 0
-        : item.counted !== '' && item.counted != null
+      const hasCounted = item.isConfirmed && (
+        item.serialTracked
+          ? (item.scannedSerials?.length || 0) > 0
+          : item.counted !== '' && item.counted != null
+      )
 
       return {
         cwpn: item.cwpn,
         expected: item.expected,
         counted: item.serialTracked
           ? (item.scannedSerials?.length || 0)
-          : (item.counted !== '' ? parseInt(item.counted) : null),
-        variance: item.variance,
-        status: item.status === ITEM_STATUS.RECOUNT_PENDING ? 'variance' : item.status,
+          : (item.isConfirmed && item.counted !== '' ? parseInt(item.counted) : null),
+        variance: item.isConfirmed ? item.variance : null,
+        status: item.status === 'unconfirmed' ? ITEM_STATUS.PENDING
+          : item.status === ITEM_STATUS.RECOUNT_PENDING ? 'variance'
+          : item.status,
         flag: itemFlags[item.cwpn] || item.flag || null,
         serialTracked: item.serialTracked || false,
         scannedSerials: item.scannedSerials || undefined,
@@ -213,20 +229,28 @@ export function useCountItems({
     }
   }, [])
 
-  // Count change handler (quantity items)
+  // Count change handler — just updates local state, no auto-save
   const handleCountChange = useCallback((cwpn, val) => {
     setLocalCounts(prev => ({ ...prev, [cwpn]: val }))
+  }, [])
+
+  // Count confirm handler — locks the field and triggers save
+  const handleCountConfirm = useCallback((cwpn, val) => {
+    if (val === '' || val == null) return
+    setLocalCounts(prev => ({ ...prev, [cwpn]: val }))
+    setConfirmedItems(prev => ({ ...prev, [cwpn]: true }))
     setDirty(true)
     scheduleAutoSave()
   }, [scheduleAutoSave])
 
-  // Serial scan handlers
+  // Serial scan handlers — each scan is implicitly a confirmation
   const handleSerialScanned = useCallback((cwpn, serial, isExpected) => {
     setLocalSerials(prev => {
       const existing = prev[cwpn] || []
       if (existing.includes(serial)) return prev
       return { ...prev, [cwpn]: [...existing, serial] }
     })
+    setConfirmedItems(prev => ({ ...prev, [cwpn]: true }))
     setDirty(true)
     scheduleAutoSave()
   }, [scheduleAutoSave])
@@ -241,9 +265,7 @@ export function useCountItems({
   }, [scheduleAutoSave])
 
   // Self-recount (Round 2): same tech clears their count to try again.
-  // Records the previous count in history and bumps the round.
   const handleRecount = useCallback((cwpn) => {
-    // Find the current item to record its previous value
     const item = items.find(i => i.cwpn === cwpn)
     if (item && item.counted !== '' && item.counted != null) {
       setSelfRecounted(prev => ({
@@ -256,6 +278,12 @@ export function useCountItems({
       }))
     }
 
+    // Unlock the field
+    setConfirmedItems(prev => {
+      const next = { ...prev }
+      delete next[cwpn]
+      return next
+    })
     setLocalCounts(prev => ({ ...prev, [cwpn]: '' }))
     setLocalSerials(prev => {
       const next = { ...prev }
@@ -294,9 +322,11 @@ export function useCountItems({
     stats,
     dirty,
     localCounts,
+    confirmedItems,
     localSerials,
     itemFlags,
     handleCountChange,
+    handleCountConfirm,
     handleSerialScanned,
     handleSerialRemoved,
     handleRecount,

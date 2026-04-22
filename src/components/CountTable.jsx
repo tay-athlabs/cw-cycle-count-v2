@@ -1,18 +1,17 @@
 /**
  * CountTable.jsx
  * ─────────────────────────────────────────────────────────────────
- * The core counting table for a session section.
- * Handles two item types:
- *   - Quantity items: editable qty input, live variance
- *   - Serial-tracked items: serial scan panel, auto-count
- *
- * Supports recount rounds:
- *   - Round 1: initial count (blind or visible)
- *   - Round 2+: recount by different technician
- *   - Escalation after max rounds
+ * Core counting table. Key behaviors:
+ *   - Tech types quantity, presses Enter to confirm and lock
+ *   - Once confirmed, field is read-only until Recount is clicked
+ *   - Variance only appears after confirmation
+ *   - Blind mode: shows Match/Mismatch only, no numeric variance
+ *   - Serial-tracked items use scan panel instead of qty input
+ *   - Recount rounds: self-recount → independent → escalate
  * ─────────────────────────────────────────────────────────────────
  */
 
+import { useState } from 'react'
 import { VarianceBadge } from './Badge'
 import SerialScanPanel from './SerialScanPanel'
 import {
@@ -33,8 +32,10 @@ export default function CountTable({
   canEdit,
   saving,
   localCounts,
+  confirmedItems,
   currentUser,
   onCountChange,
+  onCountConfirm,
   onRecount,
   onFlag,
   onRequestRecount,
@@ -122,7 +123,9 @@ export default function CountTable({
                 canEdit={canEdit}
                 currentUser={currentUser}
                 localCount={localCounts[item.cwpn]}
+                isConfirmed={!!confirmedItems?.[item.cwpn]}
                 onCountChange={onCountChange}
+                onCountConfirm={onCountConfirm}
                 onRecount={onRecount}
                 onFlag={onFlag}
                 onRequestRecount={onRequestRecount}
@@ -145,7 +148,7 @@ export default function CountTable({
         flexWrap: 'wrap',
       }}>
         <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-          {isBlind ? 'Blind count: expected quantities hidden' : 'All section quantities visible'}
+          {isBlind ? 'Blind count: expected quantities hidden / variance shown as match or mismatch only' : 'Press Enter to confirm each count'}
         </span>
         <div style={{ flex: 1 }} />
         {[
@@ -171,10 +174,13 @@ export default function CountTable({
 
 function CountRow({
   item, isBlind, isReadOnly, canEdit, currentUser,
-  localCount, onCountChange, onRecount, onFlag,
+  localCount, isConfirmed, onCountChange, onCountConfirm, onRecount, onFlag,
   onRequestRecount, onSubmitRecount, onEscalate,
   onSerialScanned, onSerialRemoved,
 }) {
+  // Local input state for unconfirmed typing
+  const [inputVal, setInputVal] = useState('')
+
   const rowClass = getItemRowClass(item)
   const reasonLabel = item.flag ? getVarianceReasonLabel(item.flag.reason) : null
   const isSerialTracked = item.serialTracked
@@ -187,13 +193,25 @@ function CountRow({
   //   Round 2 = self-recount (same tech corrects their own error)
   //   Round 3 = independent recount (different tech, separation of duties)
   //   After Round 3 = escalate to manager
-  const needsSelfRecount = round === 1 // after round 1, next step is self-recount
-  const needsIndependentRecount = round === 2 // after round 2, next step is different-tech recount
-  const canEscalate = round >= MAX_RECOUNT_ROUNDS // after round 3, can escalate
+  const needsSelfRecount = round === 1
+  const needsIndependentRecount = round === 2
+  const canEscalate = round >= MAX_RECOUNT_ROUNDS
 
   // For independent recount (round 3): can this user do it?
   const canDoRecount = isRecountPending && currentUser?.email !== item.recountExcludedUser
   const isExcludedFromRecount = isRecountPending && currentUser?.email === item.recountExcludedUser
+
+  // Is field editable? Only if not confirmed and not in special states
+  const fieldEditable = canEdit && !isConfirmed && !isRecountPending && !isEscalated
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      const val = e.target.value.trim()
+      if (val !== '') {
+        onCountConfirm?.(item.cwpn, val)
+      }
+    }
+  }
 
   return (
     <tr className={rowClass}>
@@ -225,7 +243,7 @@ function CountRow({
             {item.countHistory.map((h, i) => (
               <div key={i} style={{ fontSize: 9, color: 'var(--text-muted)', lineHeight: 1.4 }}>
                 Round {h.round}: counted {h.counted ?? '/'} by {h.countedBy?.name || 'Unknown'}
-                {h.variance != null && h.variance !== 0 && (
+                {!isBlind && h.variance != null && h.variance !== 0 && (
                   <span style={{ color: 'var(--red-text)' }}> (var: {h.variance > 0 ? '+' : ''}{h.variance})</span>
                 )}
               </div>
@@ -259,6 +277,7 @@ function CountRow({
             onSerialRemoved={(serial) => onSerialRemoved?.(item.cwpn, serial)}
           />
         ) : isRecountPending && canDoRecount ? (
+          /* Independent recount input (Round 3) */
           <input
             id={`qty-${item.cwpn}`}
             className="input input-sm input-qty"
@@ -278,31 +297,56 @@ function CountRow({
               }
             }}
           />
-        ) : canEdit && !isRecountPending && !isEscalated ? (
+        ) : fieldEditable ? (
+          /* Normal count input — type freely, Enter to confirm */
           <input
             id={`qty-${item.cwpn}`}
-            className={`input input-sm input-qty ${
-              item.status === ITEM_STATUS.VARIANCE ? 'input-variance'
-              : item.status === ITEM_STATUS.MATCHED ? 'input-matched'
-              : ''
-            }`}
+            className="input input-sm input-qty"
             type="number"
             min="0"
-            value={localCount ?? item.counted}
+            value={localCount ?? ''}
             placeholder="..."
             onChange={e => onCountChange(item.cwpn, e.target.value)}
+            onKeyDown={handleKeyDown}
           />
         ) : (
-          <span style={{ fontWeight: 600 }}>
+          /* Confirmed / read-only — show locked value */
+          <span style={{
+            fontWeight: 700,
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 13,
+            color: isConfirmed ? 'var(--text-primary)' : 'var(--text-muted)',
+            background: isConfirmed
+              ? item.status === ITEM_STATUS.MATCHED ? 'var(--green-light)'
+              : item.status === ITEM_STATUS.VARIANCE ? 'var(--red-light)'
+              : 'var(--surface-2)'
+              : 'transparent',
+            padding: '4px 10px',
+            borderRadius: 'var(--r-sm)',
+            display: 'inline-block',
+            minWidth: 40,
+          }}>
             {item.counted !== '' && item.counted != null ? item.counted : '...'}
           </span>
         )}
       </td>
 
+      {/* Variance column */}
       <td style={{ textAlign: 'center' }}>
         {isRecountPending ? (
           <span className="badge badge-amber" style={{ fontSize: 10 }}>Recount</span>
+        ) : !isConfirmed || item.status === 'unconfirmed' || item.status === ITEM_STATUS.PENDING ? (
+          /* Not yet confirmed — show nothing */
+          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>...</span>
+        ) : isBlind ? (
+          /* Blind mode — show Match/Mismatch only, no numbers */
+          item.variance === 0 ? (
+            <span className="badge badge-green" style={{ fontSize: 10 }}>Match</span>
+          ) : (
+            <span className="badge badge-red" style={{ fontSize: 10 }}>Mismatch</span>
+          )
         ) : (
+          /* Normal mode — show numeric variance */
           <VarianceBadge variance={item.variance} />
         )}
       </td>
@@ -346,7 +390,6 @@ function CountRow({
         {canEdit && item.status === ITEM_STATUS.VARIANCE && !isRecountPending && !isEscalated && (
           <div className="variance-actions">
             {needsSelfRecount && (
-              /* Round 1 → Round 2: same tech recounts themselves */
               <button
                 className="variance-btn variance-btn-recount"
                 onClick={() => onRecount(item.cwpn)}
@@ -356,7 +399,6 @@ function CountRow({
               </button>
             )}
             {needsIndependentRecount && (
-              /* Round 2 → Round 3: request recount by different tech */
               <button
                 className="variance-btn variance-btn-recount"
                 onClick={() => onRequestRecount?.(item.cwpn)}
@@ -366,7 +408,6 @@ function CountRow({
               </button>
             )}
             {canEscalate && (
-              /* After Round 3: escalate to manager */
               <button
                 className="variance-btn"
                 style={{ borderColor: 'var(--red)', color: 'var(--red-text)', background: 'var(--red-light)' }}
@@ -383,6 +424,13 @@ function CountRow({
               {item.flag ? 'Edit flag' : 'Flag'}
             </button>
           </div>
+        )}
+
+        {/* Unconfirmed — prompt to press Enter */}
+        {canEdit && item.status === 'unconfirmed' && (
+          <span style={{ fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+            Press Enter to confirm
+          </span>
         )}
 
         {/* Read-only variance display */}

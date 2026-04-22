@@ -82,8 +82,8 @@ export default function CountSession() {
 
   // ── Count items hook ─────────────────────────────────────────
   const {
-    items, stats, dirty, localCounts, localSerials, itemFlags,
-    handleCountChange, handleSerialScanned, handleSerialRemoved,
+    items, stats, dirty, localCounts, confirmedItems, localSerials, itemFlags,
+    handleCountChange, handleCountConfirm, handleSerialScanned, handleSerialRemoved,
     handleRecount, setFlag, flushSave,
   } = useCountItems({
     session,
@@ -336,8 +336,10 @@ export default function CountSession() {
             canEdit={canEdit}
             saving={saving}
             localCounts={localCounts}
+            confirmedItems={confirmedItems}
             currentUser={user}
             onCountChange={handleCountChange}
+            onCountConfirm={handleCountConfirm}
             onRecount={handleRecount}
             onFlag={openFlagModal}
             onRequestRecount={handleRequestRecount}
