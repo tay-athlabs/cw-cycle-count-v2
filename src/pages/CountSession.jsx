@@ -19,6 +19,7 @@ import { useSession } from '../hooks/useSession'
 import { useSKUs } from '../hooks/useInventory'
 import { useCountItems } from '../hooks/useCountItems'
 import { useAuth } from '../context/AuthContext'
+import { isManager } from '../services/authService'
 import { SessionStatus } from '../components/Badge'
 import StatCard from '../components/StatCard'
 import ScanBar from '../components/ScanBar'
@@ -41,12 +42,13 @@ export default function CountSession() {
   const { sessionId } = useParams()
   const navigate      = useNavigate()
   const { user }      = useAuth()
+  const userIsManager = isManager(user)
 
   // ── Session data & operations ────────────────────────────────
   const {
     session, loading, saving, error,
-    claim, saveItems, completeSection, submit, approve,
-    requestRecount, submitRecount, escalateItem,
+    claim, saveItems, completeSection, submit, approve, reject,
+    requestRecount, submitRecount, escalateItem, resolveEscalation,
     startPolling, stopPolling,
   } = useSession(sessionId)
 
@@ -97,12 +99,28 @@ export default function CountSession() {
   // ── Flag modal state ─────────────────────────────────────────
   const [flagTarget, setFlagTarget] = useState(null)
   const [reportOpen, setReportOpen] = useState(false)
+  const [rejectOpen, setRejectOpen] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [escalationTarget, setEscalationTarget] = useState(null)
 
   const openFlagModal = (item) => setFlagTarget(item)
   const closeFlagModal = () => setFlagTarget(null)
 
   const handleFlagSubmit = (cwpn, flagData) => {
     setFlag(cwpn, flagData)
+  }
+
+  const handleReject = async () => {
+    if (!rejectReason.trim()) return
+    await reject(rejectReason.trim())
+    setRejectOpen(false)
+    setRejectReason('')
+  }
+
+  const handleResolveEscalation = async (resolution) => {
+    if (!escalationTarget) return
+    await resolveEscalation(activeSection, escalationTarget.cwpn, resolution)
+    setEscalationTarget(null)
   }
 
   // ── Recount operations ───────────────────────────────────────
@@ -221,13 +239,35 @@ export default function CountSession() {
               </button>
             </>
           )}
-          {session.status === SESSION_STATUS.PENDING_REVIEW && (
-            <button className="btn btn-cw btn-sm" onClick={approve} disabled={saving}>
-              Approve
-            </button>
+          {session.status === SESSION_STATUS.PENDING_REVIEW && userIsManager && (
+            <>
+              <button className="btn btn-sm" style={{ borderColor: 'var(--red)', color: 'var(--red-text)' }}
+                onClick={() => setRejectOpen(true)} disabled={saving}>
+                Reject
+              </button>
+              <button className="btn btn-cw btn-sm" onClick={approve} disabled={saving}>
+                Approve and reconcile
+              </button>
+            </>
+          )}
+          {session.status === SESSION_STATUS.PENDING_REVIEW && !userIsManager && (
+            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+              Awaiting manager approval
+            </span>
           )}
         </div>
       </div>
+
+      {/* Rejection reason banner */}
+      {session.rejectionReason && session.status === SESSION_STATUS.IN_PROGRESS && (
+        <div className="alert alert-red" style={{ marginBottom: 'var(--sp-4)' }}>
+          <div className="alert-dot" style={{ background: 'var(--red)' }} />
+          <div>
+            <strong>Session returned by {session.rejectedBy?.name || 'manager'}</strong>
+            {' / '}{session.rejectionReason}
+          </div>
+        </div>
+      )}
 
       {/* Recount alert banner */}
       {totalRecountsPending > 0 && (
@@ -350,6 +390,7 @@ export default function CountSession() {
             onRequestRecount={handleRequestRecount}
             onSubmitRecount={handleSubmitRecount}
             onEscalate={handleEscalate}
+            onResolveEscalation={userIsManager ? (item) => setEscalationTarget(item) : null}
             onSerialScanned={handleSerialScanned}
             onSerialRemoved={handleSerialRemoved}
             onCompleteSection={handleCompleteSection}
@@ -375,6 +416,162 @@ export default function CountSession() {
         session={session}
         skus={skus}
       />
+
+      {/* Rejection modal */}
+      {rejectOpen && (
+        <div className="modal-overlay" onClick={() => setRejectOpen(false)}>
+          <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
+            <div className="modal-title">Return session for re-count</div>
+            <div className="modal-sub">
+              This will set the session back to "In progress" so the technician can address the issues.
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label>Reason for rejection</label>
+              <textarea
+                className="input"
+                rows={3}
+                placeholder="e.g. Recount Stored section — SFP-LR variance needs verification. Check RMA log for missing units."
+                value={rejectReason}
+                onChange={e => setRejectReason(e.target.value)}
+                style={{ resize: 'vertical' }}
+                autoFocus
+              />
+            </div>
+            <div className="flex-center gap-2" style={{ justifyContent: 'flex-end' }}>
+              <button className="btn" onClick={() => { setRejectOpen(false); setRejectReason('') }}>
+                Cancel
+              </button>
+              <button className="btn btn-danger" onClick={handleReject} disabled={!rejectReason.trim() || saving}>
+                {saving ? 'Returning...' : 'Return for re-count'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Escalation resolution modal */}
+      {escalationTarget && (
+        <EscalationModal
+          item={escalationTarget}
+          onResolve={handleResolveEscalation}
+          onClose={() => setEscalationTarget(null)}
+          saving={saving}
+        />
+      )}
+    </div>
+  )
+}
+
+function EscalationModal({ item, onResolve, onClose, saving }) {
+  const [action, setAction] = useState('accept_variance')
+  const [note, setNote] = useState('')
+  const [adjustedQty, setAdjustedQty] = useState('')
+
+  const handleSubmit = () => {
+    onResolve({
+      action,
+      note,
+      adjustedQty: action === 'adjust_quantity' ? parseInt(adjustedQty) : null,
+    })
+  }
+
+  const actions = [
+    { key: 'accept_variance', label: 'Accept variance as-is', desc: 'The variance is real and will be reflected in inventory after approval.' },
+    { key: 'adjust_quantity', label: 'Override with corrected quantity', desc: 'Set the correct quantity manually based on investigation.' },
+    { key: 'pending_netsuite', label: 'Pending NetSuite transaction', desc: 'Variance caused by unprocessed transaction. Will resolve on next import.' },
+  ]
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
+        <div className="modal-title">Resolve escalation</div>
+        <div className="modal-sub">
+          <span className="mono" style={{ fontWeight: 600 }}>{item.cwpn}</span>
+          {' / '}{item.desc}
+          {' / Counted: '}<strong>{item.counted}</strong>
+          {' / Expected: '}<strong>{item.expected}</strong>
+          {' / Variance: '}
+          <span style={{ color: 'var(--red-text)', fontWeight: 700 }}>
+            {item.variance > 0 ? '+' : ''}{item.variance}
+          </span>
+        </div>
+
+        {/* Count history */}
+        {item.countHistory?.length > 0 && (
+          <div style={{ marginBottom: 16, padding: '8px 12px', background: 'var(--surface-2)', borderRadius: 'var(--r-md)', fontSize: 12 }}>
+            <div style={{ fontWeight: 700, marginBottom: 4, fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Count history</div>
+            {item.countHistory.map((h, i) => (
+              <div key={i} style={{ color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Round {h.round}: counted {h.counted ?? '/'} by {h.countedBy?.name || 'Unknown'}
+                {h.variance != null && h.variance !== 0 && (
+                  <span style={{ color: 'var(--red-text)' }}> (var: {h.variance > 0 ? '+' : ''}{h.variance})</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Resolution options */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ marginBottom: 8 }}>Resolution</label>
+          {actions.map(a => (
+            <div
+              key={a.key}
+              className={`reason-option${action === a.key ? ' selected' : ''}`}
+              onClick={() => setAction(a.key)}
+            >
+              <div className="reason-radio">
+                {action === a.key && <div className="reason-radio-dot" />}
+              </div>
+              <div>
+                <div className="reason-label">{a.label}</div>
+                <div className="reason-desc">{a.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Adjusted qty input */}
+        {action === 'adjust_quantity' && (
+          <div style={{ marginBottom: 12 }}>
+            <label>Corrected quantity</label>
+            <input
+              className="input"
+              type="number"
+              min="0"
+              placeholder="Enter correct quantity..."
+              value={adjustedQty}
+              onChange={e => setAdjustedQty(e.target.value)}
+              autoFocus
+            />
+          </div>
+        )}
+
+        {/* Notes */}
+        <div style={{ marginBottom: 20 }}>
+          <label>Investigation notes</label>
+          <textarea
+            className="input"
+            rows={3}
+            placeholder="Document the investigation findings and resolution rationale..."
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            style={{ resize: 'vertical' }}
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex-center gap-2" style={{ justifyContent: 'flex-end' }}>
+          <button className="btn" onClick={onClose}>Cancel</button>
+          <button
+            className="btn btn-cw"
+            onClick={handleSubmit}
+            disabled={saving || (action === 'adjust_quantity' && !adjustedQty)}
+          >
+            {saving ? 'Resolving...' : 'Resolve escalation'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSessionList } from '../hooks/useSession'
 import { SessionStatus, AccuracyBadge } from '../components/Badge'
+import { changeUserRole } from '../services/dataService'
+import { useAppContext } from '../context/AppContext'
 import {
+  ROLE,
   ROLE_LABELS,
   ACTIVE_STATUSES,
   SESSION_STATUS,
@@ -13,11 +16,11 @@ import {
 
 export default function Profile() {
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user, logout, updateRole } = useAuth()
   const { sessions, loading } = useSessionList()
+  const { showToast } = useAppContext()
   const [tab, setTab] = useState('my-counts')
 
-  // Memoize filtered lists to avoid O(n) on every render
   const myCounts = useMemo(() =>
     sessions.filter(s => {
       const sections = Object.values(s.sections || {})
@@ -47,6 +50,16 @@ export default function Profile() {
   const initials = user?.name
     ? user.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
     : 'CW'
+
+  const handleRoleChange = async (newRole) => {
+    try {
+      await changeUserRole(user.email, newRole, user)
+      if (updateRole) updateRole(newRole)
+      showToast(`Role changed to ${ROLE_LABELS[newRole]}`, 'success')
+    } catch (err) {
+      showToast(`Role change failed: ${err.message}`, 'error')
+    }
+  }
 
   if (loading) {
     return (
@@ -79,6 +92,31 @@ export default function Profile() {
           <button className="btn btn-sm" onClick={logout} style={{ alignSelf: 'flex-start' }}>
             Sign out
           </button>
+        </div>
+      </div>
+
+      {/* Role switcher (for testing) */}
+      <div className="card mb-6">
+        <h3 className="card-section-title">
+          Role
+          <span className="badge badge-amber" style={{ marginLeft: 8, fontSize: 10, verticalAlign: 'middle' }}>
+            Testing mode
+          </span>
+        </h3>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
+          Switch roles to test different permission levels. Role changes are logged in the audit trail.
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {Object.entries(ROLE).map(([key, value]) => (
+            <button
+              key={value}
+              className={`btn btn-sm ${user?.role === value ? 'btn-cw' : ''}`}
+              onClick={() => handleRoleChange(value)}
+              disabled={user?.role === value}
+            >
+              {ROLE_LABELS[value]}
+            </button>
+          ))}
         </div>
       </div>
 

@@ -12,11 +12,13 @@ import {
   updateSession,
   completeSession,
   approveSession,
+  rejectSession,
   claimSection,
   updateSectionItems,
   requestRecount as requestRecountService,
   submitRecount as submitRecountService,
   escalateItem as escalateItemService,
+  resolveEscalation as resolveEscalationService,
 } from '../services/dataService'
 import { useAppContext } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
@@ -235,11 +237,43 @@ export function useSession(sessionId) {
     }
   }, [sessionId, user, cacheSession, showToast])
 
+  const reject = useCallback(async (reason) => {
+    try {
+      setSaving(true)
+      const updated = await rejectSession(sessionId, { email: user.email, name: user.name }, reason)
+      setSession(updated)
+      cacheSession(updated)
+      invalidateSession(sessionId)
+      showToast('Session returned for re-count', 'warning')
+    } catch (err) {
+      showToast(`Reject failed: ${err.message}`, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }, [sessionId, user, cacheSession, invalidateSession, showToast])
+
+  const resolveEscalation = useCallback(async (sectionKey, cwpn, resolution) => {
+    try {
+      setSaving(true)
+      const updated = await resolveEscalationService(sessionId, sectionKey, cwpn, resolution, {
+        email: user.email,
+        name: user.name,
+      })
+      setSession(updated)
+      cacheSession(updated)
+      showToast('Escalation resolved', 'success')
+    } catch (err) {
+      showToast(`Resolution failed: ${err.message}`, 'error')
+    } finally {
+      setSaving(false)
+    }
+  }, [sessionId, user, cacheSession, showToast])
+
   return {
     session, loading, saving, error,
     refetch: fetch, claim, saveItems,
-    completeSection, submit, approve,
-    requestRecount, submitRecount, escalateItem,
+    completeSection, submit, approve, reject,
+    requestRecount, submitRecount, escalateItem, resolveEscalation,
     startPolling, stopPolling,
   }
 }

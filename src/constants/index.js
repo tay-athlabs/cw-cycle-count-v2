@@ -243,10 +243,12 @@ export const AUDIT_ACTION = {
   ITEM_RECOUNTED: 'item_recounted',
   ITEM_FLAGGED: 'item_flagged',
   ITEM_ESCALATED: 'item_escalated',
+  ESCALATION_RESOLVED: 'escalation_resolved',
   SERIAL_SCANNED: 'serial_scanned',
   SERIAL_UNEXPECTED: 'serial_unexpected',
   SERIAL_MISSING: 'serial_missing',
   IMPORT_COMPLETED: 'import_completed',
+  ROLE_CHANGED: 'role_changed',
 }
 
 // ── AUTO-SAVE ─────────────────────────────────────────────────────

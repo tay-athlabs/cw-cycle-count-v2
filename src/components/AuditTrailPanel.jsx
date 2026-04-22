@@ -23,10 +23,12 @@ const ACTION_LABELS = {
   item_recounted: { label: 'Item recounted', icon: '↻', color: 'var(--blue)' },
   item_flagged: { label: 'Item flagged', icon: '⚑', color: 'var(--purple)' },
   item_escalated: { label: 'Item escalated', icon: '!', color: 'var(--red)' },
+  escalation_resolved: { label: 'Escalation resolved', icon: '✓', color: 'var(--green)' },
   serial_scanned: { label: 'Serial scanned', icon: '⊡', color: 'var(--blue)' },
   serial_unexpected: { label: 'Unexpected serial', icon: '?', color: 'var(--amber)' },
   serial_missing: { label: 'Serial missing', icon: '✕', color: 'var(--red)' },
   import_completed: { label: 'Import completed', icon: '↓', color: 'var(--green)' },
+  role_changed: { label: 'Role changed', icon: '⚙', color: 'var(--purple)' },
 }
 
 export default function AuditTrailPanel({ sessionId }) {
@@ -172,6 +174,26 @@ export default function AuditTrailPanel({ sessionId }) {
                     {log.reason && (
                       <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
                         Reason: {log.reason}
+                      </div>
+                    )}
+                    {log.adjustmentsCount != null && (
+                      <div style={{ fontSize: 10, color: 'var(--green-text)' }}>
+                        {log.adjustmentsCount} inventory adjustment{log.adjustmentsCount !== 1 ? 's' : ''} applied
+                      </div>
+                    )}
+                    {log.targetEmail && (
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                        Target: {log.targetEmail} → {log.newRole}
+                      </div>
+                    )}
+                    {log.action && log.action !== log.sessionId && (
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>
+                        Action: {log.action.replace(/_/g, ' ')}
+                      </div>
+                    )}
+                    {log.note && (
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        "{log.note}"
                       </div>
                     )}
                   </div>

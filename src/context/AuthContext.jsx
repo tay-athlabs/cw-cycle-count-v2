@@ -25,7 +25,12 @@ export function AuthProvider({ children }) {
   // On mount — restore persisted session or apply bypass
   useEffect(() => {
     if (BYPASS_AUTH) {
-      setUser(MOCK_USER)
+      const persisted = getPersistedUser()
+      if (persisted) {
+        setUser(persisted)
+      } else {
+        setUser(MOCK_USER)
+      }
       setLoading(false)
       return
     }
@@ -38,6 +43,12 @@ export function AuthProvider({ children }) {
   const loginWithGoogle = useCallback((credentialResponse) => {
     try {
       setError(null)
+      if (BYPASS_AUTH) {
+        // In bypass mode, just use mock user
+        persistUser(MOCK_USER)
+        setUser(MOCK_USER)
+        return
+      }
       const decoded = decodeCredential(credentialResponse.credential)
       persistUser(decoded)
       setUser(decoded)
@@ -51,6 +62,15 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
+  // Update user role (for testing and admin role management)
+  const updateRole = useCallback((newRole) => {
+    setUser(prev => {
+      const updated = { ...prev, role: newRole }
+      persistUser(updated)
+      return updated
+    })
+  }, [])
+
   const value = {
     user,
     loading,
@@ -58,6 +78,7 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     loginWithGoogle,
     logout,
+    updateRole,
   }
 
   return (

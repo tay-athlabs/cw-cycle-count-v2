@@ -322,12 +322,69 @@ export async function completeSession(id, userInfo) {
 }
 
 export async function approveSession(id, userInfo) {
+  const store = getStore()
+  const session = store.sessions.find(s => s.id === id)
+  if (!session) throw new Error(`Session ${id} not found`)
+
+  // Reconcile inventory: update SKU balances to match counted values
+  const adjustments = []
+  Object.entries(session.sections || {}).forEach(([sectionKey, section]) => {
+    (section.items || []).forEach(item => {
+      if (item.counted != null && item.counted !== '' && item.status !== 'pending') {
+        const skuIdx = store.skus.findIndex(s => s.cwpn === item.cwpn)
+        if (skuIdx !== -1) {
+          const oldQty = store.skus[skuIdx].inventory?.[session.siteId]?.[sectionKey] || 0
+          const newQty = typeof item.counted === 'number' ? item.counted : parseInt(item.counted)
+          if (oldQty !== newQty) {
+            if (!store.skus[skuIdx].inventory[session.siteId]) {
+              store.skus[skuIdx].inventory[session.siteId] = {}
+            }
+            store.skus[skuIdx].inventory[session.siteId][sectionKey] = newQty
+            adjustments.push({
+              cwpn: item.cwpn,
+              siteId: session.siteId,
+              bin: sectionKey,
+              oldQty,
+              newQty,
+              variance: newQty - oldQty,
+            })
+          }
+        }
+      }
+    })
+  })
+
   const updated = await updateSession(id, {
     status: 'approved',
     approvedAt: new Date().toISOString(),
     approvedBy: userInfo,
+    adjustments,
   })
-  await logAudit('session_approved', { sessionId: id }, userInfo)
+
+  saveStore(store)
+
+  await logAudit('session_approved', {
+    sessionId: id,
+    adjustmentsCount: adjustments.length,
+    adjustments: adjustments.map(a => `${a.cwpn} ${a.bin}: ${a.oldQty} → ${a.newQty}`),
+  }, userInfo)
+
+  return updated
+}
+
+export async function rejectSession(id, userInfo, reason) {
+  const updated = await updateSession(id, {
+    status: 'in_progress',
+    completedAt: null,
+    completedBy: null,
+    rejectedAt: new Date().toISOString(),
+    rejectedBy: userInfo,
+    rejectionReason: reason,
+  })
+  await logAudit('session_rejected', {
+    sessionId: id,
+    reason,
+  }, userInfo)
   return updated
 }
 
@@ -664,6 +721,80 @@ export async function getAnalytics(siteId) {
     ? sessions.filter(s => s.siteId === siteId && s.status === 'approved')
     : sessions.filter(s => s.status === 'approved')
   return buildAnalytics(filtered)
+}
+
+// ── ROLE MANAGEMENT ───────────────────────────────────────────────
+
+export async function changeUserRole(targetEmail, newRole, changedBy) {
+  await logAudit('role_changed', {
+    targetEmail,
+    newRole,
+    changedByEmail: changedBy?.email,
+  }, changedBy)
+  // In localStorage prototype, roles are stored on the user object in sessionStorage
+  // In production, this would update the users table
+  return { email: targetEmail, role: newRole }
+}
+
+// ── ESCALATION RESOLUTION ─────────────────────────────────────────
+
+export async function resolveEscalation(sessionId, sectionKey, cwpn, resolution, resolvedBy) {
+  const store = getStore()
+  const idx = store.sessions.findIndex(s => s.id === sessionId)
+  if (idx === -1) throw new Error(`Session ${sessionId} not found`)
+
+  const session = store.sessions[idx]
+  const section = session.sections?.[sectionKey]
+
+  const updatedItems = (section.items || []).map(i => {
+    if (i.cwpn === cwpn) {
+      return {
+        ...i,
+        status: resolution.action === 'accept_variance' ? 'variance' : 'matched',
+        escalation: {
+          ...i.escalation,
+          resolvedBy,
+          resolvedAt: new Date().toISOString(),
+          resolution: resolution.note,
+          action: resolution.action,
+        },
+        // If manager overrides the count
+        ...(resolution.action === 'adjust_quantity' && resolution.adjustedQty != null ? {
+          counted: resolution.adjustedQty,
+          variance: resolution.adjustedQty - i.expected,
+          status: resolution.adjustedQty === i.expected ? 'matched' : 'variance',
+        } : {}),
+      }
+    }
+    return i
+  })
+
+  const updated = {
+    ...session,
+    sections: {
+      ...session.sections,
+      [sectionKey]: {
+        ...section,
+        items: updatedItems,
+      },
+    },
+  }
+
+  const { summary, accuracy } = calculateSessionStats(updated)
+  updated.summary = summary
+  updated.accuracy = accuracy
+  store.sessions[idx] = updated
+  saveStore(store)
+
+  await logAudit('escalation_resolved', {
+    sessionId,
+    sectionKey,
+    cwpn,
+    action: resolution.action,
+    note: resolution.note,
+  }, resolvedBy)
+
+  return updated
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────

@@ -41,6 +41,7 @@ export default function CountTable({
   onRequestRecount,
   onSubmitRecount,
   onEscalate,
+  onResolveEscalation,
   onSerialScanned,
   onSerialRemoved,
   onCompleteSection,
@@ -141,6 +142,7 @@ export default function CountTable({
                   onRequestRecount={onRequestRecount}
                   onSubmitRecount={onSubmitRecount}
                   onEscalate={onEscalate}
+                  onResolveEscalation={onResolveEscalation}
                   onSerialScanned={onSerialScanned}
                   onSerialRemoved={onSerialRemoved}
                 />
@@ -186,7 +188,7 @@ export default function CountTable({
 function CountRow({
   item, isBlind, isReadOnly, canEdit, currentUser,
   localCount, isConfirmed, nextItemCwpn, onCountChange, onCountConfirm, onRecount, onFlag,
-  onRequestRecount, onSubmitRecount, onEscalate,
+  onRequestRecount, onSubmitRecount, onEscalate, onResolveEscalation,
   onSerialScanned, onSerialRemoved,
 }) {
   // Local input state for unconfirmed typing
@@ -394,9 +396,23 @@ function CountRow({
         )}
 
         {/* Escalated state */}
-        {isEscalated && (
+        {isEscalated && !item.escalation?.resolvedAt && onResolveEscalation && (
+          <button
+            className="variance-btn"
+            style={{ borderColor: 'var(--red)', color: 'var(--red-text)', background: 'var(--red-light)' }}
+            onClick={() => onResolveEscalation(item)}
+          >
+            Resolve
+          </button>
+        )}
+        {isEscalated && !item.escalation?.resolvedAt && !onResolveEscalation && (
           <span style={{ fontSize: 10, color: 'var(--red-text)', fontWeight: 600 }}>
             Awaiting resolution
+          </span>
+        )}
+        {isEscalated && item.escalation?.resolvedAt && (
+          <span className="badge badge-green" style={{ fontSize: 9 }}>
+            Resolved: {item.escalation.action?.replace(/_/g, ' ')}
           </span>
         )}
 
