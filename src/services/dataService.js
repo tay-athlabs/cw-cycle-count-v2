@@ -371,6 +371,8 @@ export async function updateSectionItems(sessionId, sectionKey, items) {
   if (idx === -1) throw new Error(`Session ${sessionId} not found`)
 
   const session = store.sessions[idx]
+  const previousItems = session.sections?.[sectionKey]?.items || []
+
   const updated = {
     ...session,
     status: session.status === 'open' || session.status === 'scheduled' ? 'in_progress' : session.status,
@@ -388,6 +390,27 @@ export async function updateSectionItems(sessionId, sectionKey, items) {
   updated.accuracy = accuracy
   store.sessions[idx] = updated
   saveStore(store)
+
+  // Log audit entries for newly detected variances (not every save)
+  for (const item of items) {
+    if (item.status === 'variance' && item.counted != null) {
+      const prev = previousItems.find(p => p.cwpn === item.cwpn)
+      // Only log if this is a NEW variance (wasn't variance before, or count changed)
+      if (!prev || prev.status !== 'variance' || prev.counted !== item.counted) {
+        await logAudit('item_counted', {
+          sessionId,
+          sectionKey,
+          cwpn: item.cwpn,
+          expected: item.expected,
+          counted: item.counted,
+          variance: item.variance,
+          round: item.countRound || 1,
+          type: 'variance_detected',
+        }, item.countedBy)
+      }
+    }
+  }
+
   return updated
 }
 

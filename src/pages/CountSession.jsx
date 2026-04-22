@@ -286,7 +286,12 @@ export default function CountSession() {
           session={session}
           skus={skus}
           activeSection={activeSection}
-          onSelectSection={setActiveSection}
+          onSelectSection={async (key) => {
+            if (dirty && activeSection) {
+              await flushSave()
+            }
+            setActiveSection(key)
+          }}
           accuracy={session.accuracy}
         />
 

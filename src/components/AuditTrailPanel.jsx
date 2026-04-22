@@ -56,6 +56,37 @@ export default function AuditTrailPanel({ sessionId }) {
     )
   }
 
+  const exportAuditTrail = () => {
+    if (!logs.length) return
+    const headers = ['Timestamp', 'Action', 'User', 'Section', 'CWPN', 'Detail']
+    const rows = logs.map(log => {
+      const config = ACTION_LABELS[log.action] || { label: log.action }
+      let detail = ''
+      if (log.round) detail += `Round ${log.round}`
+      if (log.previousCount != null) detail += ` | prev: ${log.previousCount}`
+      if (log.newCount != null) detail += ` | new: ${log.newCount}`
+      if (log.variance != null) detail += ` | var: ${log.variance}`
+      if (log.reason) detail += ` | ${log.reason}`
+      if (log.duration) detail += ` | ${log.duration} min`
+      return [
+        new Date(log.timestamp).toISOString(),
+        config.label,
+        log.user?.name || 'System',
+        log.sectionKey || '',
+        log.cwpn || '',
+        detail.replace(/^\s*\|\s*/, ''),
+      ]
+    })
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `audit-trail-${sessionId}-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="card mb-4" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{
@@ -67,6 +98,9 @@ export default function AuditTrailPanel({ sessionId }) {
         <span style={{ fontWeight: 700, fontSize: 13 }}>Audit trail</span>
         <span className="badge badge-gray" style={{ fontSize: 10 }}>{logs.length} entries</span>
         <div style={{ flex: 1 }} />
+        <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={exportAuditTrail} disabled={!logs.length}>
+          Export CSV
+        </button>
         <button className="btn btn-ghost btn-sm" style={{ fontSize: 11 }} onClick={fetchLogs}>
           ↻ Refresh
         </button>

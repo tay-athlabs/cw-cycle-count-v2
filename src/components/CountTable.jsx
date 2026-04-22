@@ -114,27 +114,38 @@ export default function CountTable({
                 </td>
               </tr>
             )}
-            {items.map(item => (
-              <CountRow
-                key={item.cwpn}
-                item={item}
-                isBlind={isBlind}
-                isReadOnly={isReadOnly}
-                canEdit={canEdit}
-                currentUser={currentUser}
-                localCount={localCounts[item.cwpn]}
-                isConfirmed={!!confirmedItems?.[item.cwpn]}
-                onCountChange={onCountChange}
-                onCountConfirm={onCountConfirm}
-                onRecount={onRecount}
-                onFlag={onFlag}
-                onRequestRecount={onRequestRecount}
-                onSubmitRecount={onSubmitRecount}
-                onEscalate={onEscalate}
-                onSerialScanned={onSerialScanned}
-                onSerialRemoved={onSerialRemoved}
-              />
-            ))}
+            {items.map((item, idx) => {
+              // Find next uncounted/unconfirmed non-serial item for auto-advance
+              let nextCwpn = null
+              for (let i = idx + 1; i < items.length; i++) {
+                if (!items[i].serialTracked && !confirmedItems?.[items[i].cwpn] && items[i].status !== ITEM_STATUS.ESCALATED && items[i].recountStatus !== 'recount_pending') {
+                  nextCwpn = items[i].cwpn
+                  break
+                }
+              }
+              return (
+                <CountRow
+                  key={item.cwpn}
+                  item={item}
+                  isBlind={isBlind}
+                  isReadOnly={isReadOnly}
+                  canEdit={canEdit}
+                  currentUser={currentUser}
+                  localCount={localCounts[item.cwpn]}
+                  isConfirmed={!!confirmedItems?.[item.cwpn]}
+                  nextItemCwpn={nextCwpn}
+                  onCountChange={onCountChange}
+                  onCountConfirm={onCountConfirm}
+                  onRecount={onRecount}
+                  onFlag={onFlag}
+                  onRequestRecount={onRequestRecount}
+                  onSubmitRecount={onSubmitRecount}
+                  onEscalate={onEscalate}
+                  onSerialScanned={onSerialScanned}
+                  onSerialRemoved={onSerialRemoved}
+                />
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -174,7 +185,7 @@ export default function CountTable({
 
 function CountRow({
   item, isBlind, isReadOnly, canEdit, currentUser,
-  localCount, isConfirmed, onCountChange, onCountConfirm, onRecount, onFlag,
+  localCount, isConfirmed, nextItemCwpn, onCountChange, onCountConfirm, onRecount, onFlag,
   onRequestRecount, onSubmitRecount, onEscalate,
   onSerialScanned, onSerialRemoved,
 }) {
@@ -188,11 +199,7 @@ function CountRow({
   const isEscalated = item.status === ITEM_STATUS.ESCALATED
   const round = item.countRound || 1
 
-  // Round logic:
-  //   Round 1 = initial count
-  //   Round 2 = self-recount (same tech corrects their own error)
-  //   Round 3 = independent recount (different tech, separation of duties)
-  //   After Round 3 = escalate to manager
+  // Round logic
   const needsSelfRecount = round === 1
   const needsIndependentRecount = round === 2
   const canEscalate = round >= MAX_RECOUNT_ROUNDS
@@ -201,7 +208,7 @@ function CountRow({
   const canDoRecount = isRecountPending && currentUser?.email !== item.recountExcludedUser
   const isExcludedFromRecount = isRecountPending && currentUser?.email === item.recountExcludedUser
 
-  // Is field editable? Only if not confirmed and not in special states
+  // Is field editable?
   const fieldEditable = canEdit && !isConfirmed && !isRecountPending && !isEscalated
 
   const handleKeyDown = (e) => {
@@ -209,6 +216,13 @@ function CountRow({
       const val = e.target.value.trim()
       if (val !== '') {
         onCountConfirm?.(item.cwpn, val)
+        // Auto-advance to next uncounted item
+        if (nextItemCwpn) {
+          setTimeout(() => {
+            const nextInput = document.getElementById(`qty-${nextItemCwpn}`)
+            if (nextInput) { nextInput.focus(); nextInput.select() }
+          }, 50)
+        }
       }
     }
   }
