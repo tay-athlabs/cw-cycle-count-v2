@@ -1,8 +1,7 @@
 /**
  * AuthContext.jsx
  * Provides authentication state and actions throughout the app.
- * Currently uses BYPASS_AUTH mock — flip the flag in authService.js
- * when the Google client ID is ready.
+ * Supports mock user switching for testing multi-user flows.
  */
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
@@ -28,9 +27,8 @@ export function AuthProvider({ children }) {
       const persisted = getPersistedUser()
       if (persisted) {
         setUser(persisted)
-      } else {
-        setUser(MOCK_USER)
       }
+      // Don't auto-login — show the user picker
       setLoading(false)
       return
     }
@@ -44,7 +42,6 @@ export function AuthProvider({ children }) {
     try {
       setError(null)
       if (BYPASS_AUTH) {
-        // In bypass mode, just use mock user
         persistUser(MOCK_USER)
         setUser(MOCK_USER)
         return
@@ -55,6 +52,12 @@ export function AuthProvider({ children }) {
     } catch (err) {
       setError(err.message)
     }
+  }, [])
+
+  // Login as a specific mock user (for testing)
+  const loginAsMockUser = useCallback((mockUser) => {
+    persistUser(mockUser)
+    setUser(mockUser)
   }, [])
 
   const logout = useCallback(() => {
@@ -77,6 +80,7 @@ export function AuthProvider({ children }) {
     error,
     isAuthenticated: !!user,
     loginWithGoogle,
+    loginAsMockUser,
     logout,
     updateRole,
   }

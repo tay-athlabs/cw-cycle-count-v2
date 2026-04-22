@@ -1,58 +1,59 @@
 /**
  * InventoryBalance.jsx
  * ─────────────────────────────────────────────────────────────────
- * Browsable snapshot of current inventory across all sites.
- * Filterable by site, bin, category. Searchable by CWPN or description.
- * Shows totals per bin and allows drill-down from site level.
- * Also hosts the Import Balance button for CSV uploads.
+ * Browse current inventory data across all sites.
+ * Features:
+ *   - Filter by site, bin, category, serial-tracked
+ *   - Expandable rows for serial-tracked items showing individual serials
+ *   - Shows last import date and data source
+ *   - Links to start a count session for any site
  * ─────────────────────────────────────────────────────────────────
  */
 
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useSites, useSKUs } from '../hooks/useInventory'
-import StatCard from '../components/StatCard'
-import ImportModal from '../components/ImportModal'
-import { useAppContext } from '../context/AppContext'
-import {
-  BIN_COLORS,
-  formatBinLabel,
-} from '../constants'
+import { getSerialRegistry } from '../services/dataService'
+import { formatBinLabel } from '../constants'
 
 export default function InventoryBalance() {
+  const navigate = useNavigate()
   const { sites } = useSites()
-  const { skus } = useSKUs()
-  const { showToast } = useAppContext()
+  const { skus, loading } = useSKUs()
 
-  const [siteFilter, setSiteFilter] = useState('')
-  const [binFilter, setBinFilter] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('')
-  const [search, setSearch] = useState('')
-  const [importOpen, setImportOpen] = useState(false)
+  const [siteFilter, setSiteFilter]   = useState('')
+  const [binFilter, setBinFilter]     = useState('')
+  const [typeFilter, setTypeFilter]   = useState('')
+  const [search, setSearch]           = useState('')
+  const [expandedItem, setExpandedItem] = useState(null)
+  const [serialData, setSerialData]   = useState({})
+  const [loadingSerials, setLoadingSerials] = useState(false)
 
-  // Derive all unique categories and bins from SKU data
-  const categories = useMemo(() =>
-    [...new Set(skus.map(s => s.category).filter(Boolean))].sort(),
-    [skus]
-  )
-
-  const allBins = useMemo(() => {
-    const bins = new Set()
-    skus.forEach(sku => {
-      Object.values(sku.inventory || {}).forEach(siteBins => {
-        Object.keys(siteBins).forEach(b => bins.add(b))
-      })
-    })
-    return [...bins].sort()
-  }, [skus])
-
-  // Build flat inventory rows: one row per SKU per site per bin
-  const inventoryRows = useMemo(() => {
-    const rows = []
+  // Build flat inventory rows from SKU data
+  const rows = useMemo(() => {
+    if (!skus) return []
+    const result = []
     skus.forEach(sku => {
       Object.entries(sku.inventory || {}).forEach(([siteId, bins]) => {
+        // Site filter
+        if (siteFilter && siteId !== siteFilter) return
+
         Object.entries(bins).forEach(([bin, qty]) => {
           if (qty <= 0) return
-          rows.push({
+          // Bin filter
+          if (binFilter && bin !== binFilter) return
+          // Type filter
+          if (typeFilter === 'serial' && !sku.serialTracked) return
+          if (typeFilter === 'qty' && sku.serialTracked) return
+          // Search
+          if (search) {
+            const q = search.toLowerCase()
+            if (!sku.cwpn.toLowerCase().includes(q) &&
+                !sku.desc?.toLowerCase().includes(q) &&
+                !sku.typeName?.toLowerCase().includes(q)) return
+          }
+
+          result.push({
             cwpn: sku.cwpn,
             desc: sku.desc,
             category: sku.category,
@@ -65,122 +66,70 @@ export default function InventoryBalance() {
         })
       })
     })
-    return rows
+    return result.sort((a, b) => a.siteId.localeCompare(b.siteId) || a.bin.localeCompare(b.bin) || a.cwpn.localeCompare(b.cwpn))
+  }, [skus, siteFilter, binFilter, typeFilter, search])
+
+  // Get all bins across all sites for the filter dropdown
+  const allBins = useMemo(() => {
+    const bins = new Set()
+    skus?.forEach(sku => {
+      Object.values(sku.inventory || {}).forEach(siteBins => {
+        Object.keys(siteBins).forEach(b => bins.add(b))
+      })
+    })
+    return [...bins].sort()
   }, [skus])
 
-  // Apply filters
-  const filtered = useMemo(() => {
-    return inventoryRows.filter(r => {
-      if (siteFilter && r.siteId !== siteFilter) return false
-      if (binFilter && r.bin !== binFilter) return false
-      if (categoryFilter && r.category !== categoryFilter) return false
-      if (search) {
-        const q = search.toLowerCase()
-        if (!r.cwpn.toLowerCase().includes(q) && !r.desc.toLowerCase().includes(q)) return false
-      }
-      return true
-    })
-  }, [inventoryRows, siteFilter, binFilter, categoryFilter, search])
-
   // Summary stats
-  const stats = useMemo(() => {
-    const uniqueSites = new Set(filtered.map(r => r.siteId)).size
-    const uniqueItems = new Set(filtered.map(r => r.cwpn)).size
-    const totalQty = filtered.reduce((s, r) => s + r.qty, 0)
-    const binBreakdown = {}
-    filtered.forEach(r => {
-      binBreakdown[r.bin] = (binBreakdown[r.bin] || 0) + r.qty
-    })
-    return { uniqueSites, uniqueItems, totalQty, binBreakdown }
-  }, [filtered])
+  const totalQty = rows.reduce((s, r) => s + r.qty, 0)
+  const uniqueItems = new Set(rows.map(r => r.cwpn)).size
+  const uniqueSites = new Set(rows.map(r => r.siteId)).size
+  const serialItems = rows.filter(r => r.serialTracked)
 
-  // Aggregate view: group by CWPN for the table
-  const aggregated = useMemo(() => {
-    const map = {}
-    filtered.forEach(r => {
-      const key = siteFilter ? `${r.cwpn}` : `${r.cwpn}-${r.siteId}`
-      if (!map[key]) {
-        map[key] = {
-          cwpn: r.cwpn, desc: r.desc, category: r.category,
-          typeName: r.typeName, serialTracked: r.serialTracked,
-          siteId: r.siteId, bins: {}, total: 0,
-        }
+  // Load serials for an expanded item
+  const handleExpand = async (cwpn, siteId) => {
+    const key = `${cwpn}:${siteId}`
+    if (expandedItem === key) {
+      setExpandedItem(null)
+      return
+    }
+    setExpandedItem(key)
+    if (!serialData[key]) {
+      setLoadingSerials(true)
+      try {
+        const serials = await getSerialRegistry(cwpn, siteId)
+        setSerialData(prev => ({ ...prev, [key]: serials }))
+      } catch {
+        setSerialData(prev => ({ ...prev, [key]: [] }))
+      } finally {
+        setLoadingSerials(false)
       }
-      map[key].bins[r.bin] = (map[key].bins[r.bin] || 0) + r.qty
-      map[key].total += r.qty
-    })
-    return Object.values(map).sort((a, b) => b.total - a.total)
-  }, [filtered, siteFilter])
-
-  const clearFilters = () => {
-    setSiteFilter(''); setBinFilter(''); setCategoryFilter(''); setSearch('')
+    }
   }
 
-  const regions = [...new Set(sites.map(s => s.region))].sort()
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="loading-screen" style={{ minHeight: 300 }}>
+          <div className="loading-spinner" /><p>Loading inventory...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="page">
-      {/* Header */}
       <div className="flex-between mb-6">
         <div>
           <h1 className="page-title">Inventory Balance</h1>
           <p className="page-sub">
-            Current stock snapshot across {stats.uniqueSites} site{stats.uniqueSites !== 1 ? 's' : ''}
+            {uniqueItems} items across {uniqueSites} sites / {totalQty.toLocaleString()} total units
           </p>
         </div>
-        <button className="btn btn-cw" onClick={() => setImportOpen(true)}>
-          Import balance
+        <button className="btn btn-cw" onClick={() => navigate('/session/new')}>
+          + New count session
         </button>
       </div>
-
-      {/* Stats */}
-      <div className="grid-4 mb-6">
-        <StatCard label="Sites" value={stats.uniqueSites} sub="with matching inventory" />
-        <StatCard label="Unique items" value={stats.uniqueItems.toLocaleString()} sub="matching filters" />
-        <StatCard label="Total quantity" value={stats.totalQty.toLocaleString()} sub="units on hand" />
-        <StatCard
-          label="Top bin"
-          value={Object.keys(stats.binBreakdown).length > 0
-            ? formatBinLabel(Object.entries(stats.binBreakdown).sort((a,b) => b[1]-a[1])[0][0])
-            : '/'}
-          sub={Object.keys(stats.binBreakdown).length > 0
-            ? `${Object.entries(stats.binBreakdown).sort((a,b) => b[1]-a[1])[0][1].toLocaleString()} units`
-            : 'no data'}
-        />
-      </div>
-
-      {/* Bin breakdown bar */}
-      {Object.keys(stats.binBreakdown).length > 0 && (
-        <div className="card mb-6">
-          <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>Distribution by bin</h3>
-          <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 12 }}>
-            {Object.entries(stats.binBreakdown)
-              .sort((a,b) => b[1]-a[1])
-              .map(([bin, qty]) => (
-                <div
-                  key={bin}
-                  style={{
-                    width: `${(qty / stats.totalQty) * 100}%`,
-                    background: BIN_COLORS[bin] || 'var(--border-2)',
-                    minWidth: 2,
-                  }}
-                  title={`${formatBinLabel(bin)}: ${qty.toLocaleString()}`}
-                />
-              ))}
-          </div>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            {Object.entries(stats.binBreakdown)
-              .sort((a,b) => b[1]-a[1])
-              .map(([bin, qty]) => (
-                <div key={bin} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 2, background: BIN_COLORS[bin] || 'var(--border-2)' }} />
-                  <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{formatBinLabel(bin)}</span>
-                  <span style={{ color: 'var(--text-muted)' }}>{qty.toLocaleString()}</span>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="card mb-4" style={{ padding: '12px 16px' }}>
@@ -188,63 +137,63 @@ export default function InventoryBalance() {
           <input
             className="input input-sm"
             style={{ width: 220 }}
-            placeholder="Search CWPN or description..."
+            placeholder="Search CWPN, description..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <select
-            className="input input-sm" style={{ width: 180 }}
-            value={siteFilter} onChange={e => setSiteFilter(e.target.value)}
-          >
+          <select className="input input-sm" style={{ width: 160 }} value={siteFilter} onChange={e => setSiteFilter(e.target.value)}>
             <option value="">All sites</option>
-            {regions.map(region => (
-              <optgroup key={region} label={region}>
-                {sites.filter(s => s.region === region).map(s => (
-                  <option key={s.id} value={s.id}>{s.name}{s.city ? ` - ${s.city}` : ''}</option>
-                ))}
-              </optgroup>
-            ))}
+            {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <select
-            className="input input-sm" style={{ width: 150 }}
-            value={binFilter} onChange={e => setBinFilter(e.target.value)}
-          >
+          <select className="input input-sm" style={{ width: 160 }} value={binFilter} onChange={e => setBinFilter(e.target.value)}>
             <option value="">All bins</option>
-            {allBins.map(b => (
-              <option key={b} value={b}>{formatBinLabel(b)}</option>
-            ))}
+            {allBins.map(b => <option key={b} value={b}>{formatBinLabel(b)}</option>)}
           </select>
-          <select
-            className="input input-sm" style={{ width: 180 }}
-            value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
-          >
-            <option value="">All categories</option>
-            {categories.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
+          <select className="input input-sm" style={{ width: 140 }} value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+            <option value="">All types</option>
+            <option value="serial">Serialized only</option>
+            <option value="qty">Quantity only</option>
           </select>
-          {(siteFilter || binFilter || categoryFilter || search) && (
-            <button className="btn btn-ghost btn-sm" onClick={clearFilters}>
+          {(siteFilter || binFilter || typeFilter || search) && (
+            <button className="btn btn-ghost btn-sm" onClick={() => { setSiteFilter(''); setBinFilter(''); setTypeFilter(''); setSearch('') }}>
               Clear filters
             </button>
           )}
-          <div style={{ flex: 1 }} />
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-            {aggregated.length.toLocaleString()} rows
-          </span>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid-4 mb-4">
+        <div className="stat-card">
+          <div className="stat-label">Total items</div>
+          <div className="stat-value">{uniqueItems}</div>
+          <div className="stat-sub">{rows.length} line items</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Total quantity</div>
+          <div className="stat-value">{totalQty.toLocaleString()}</div>
+          <div className="stat-sub">across all bins</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Sites</div>
+          <div className="stat-value">{uniqueSites}</div>
+          <div className="stat-sub">with inventory</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Serialized</div>
+          <div className="stat-value" style={{ color: 'var(--cw-blue)' }}>{serialItems.length}</div>
+          <div className="stat-sub">line items with SN tracking</div>
         </div>
       </div>
 
       {/* Table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        {aggregated.length === 0 ? (
+        {rows.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">📦</div>
             <div className="empty-state-title">No inventory data</div>
             <div className="empty-state-desc">
-              {skus.length === 0
-                ? 'Import a NetSuite inventory balance CSV to populate this view'
-                : 'No items match the current filters'}
+              {skus?.length > 0 ? 'Try adjusting your filters' : 'Import inventory data to see balances here'}
             </div>
           </div>
         ) : (
@@ -252,76 +201,142 @@ export default function InventoryBalance() {
             <table>
               <thead>
                 <tr>
+                  <th style={{ width: 30 }}></th>
                   <th>CWPN</th>
                   <th>Description</th>
-                  <th>Category</th>
-                  {!siteFilter && <th>Site</th>}
-                  {allBins.filter(b => !binFilter || b === binFilter).map(b => (
-                    <th key={b} style={{ textAlign: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'center' }}>
-                        <div style={{ width: 6, height: 6, borderRadius: 2, background: BIN_COLORS[b] || 'var(--border-2)' }} />
-                        {formatBinLabel(b)}
-                      </div>
-                    </th>
-                  ))}
-                  <th style={{ textAlign: 'center' }}>Total</th>
+                  <th>Type</th>
+                  <th>Site</th>
+                  <th>Bin</th>
+                  <th style={{ textAlign: 'center' }}>Qty</th>
+                  <th style={{ textAlign: 'center' }}>Tracking</th>
                 </tr>
               </thead>
               <tbody>
-                {aggregated.slice(0, 100).map((row, i) => (
-                  <tr key={`${row.cwpn}-${row.siteId}-${i}`}>
-                    <td className="mono" style={{ fontSize: 11, fontWeight: 700 }}>{row.cwpn}</td>
-                    <td style={{ maxWidth: 200 }} className="truncate">
-                      {row.desc}
-                      {row.serialTracked && (
-                        <span className="badge badge-blue" style={{ fontSize: 9, marginLeft: 4 }}>Serial</span>
-                      )}
-                    </td>
-                    <td className="text-muted" style={{ fontSize: 12 }}>{row.category}</td>
-                    {!siteFilter && (
-                      <td style={{ fontWeight: 600, fontSize: 12 }}>{row.siteId}</td>
-                    )}
-                    {allBins.filter(b => !binFilter || b === binFilter).map(b => (
-                      <td key={b} style={{ textAlign: 'center', fontWeight: 600 }}>
-                        {row.bins[b]
-                          ? <span style={{ color: row.bins[b] > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>
-                              {row.bins[b].toLocaleString()}
-                            </span>
-                          : <span style={{ color: 'var(--border-2)' }}>-</span>
-                        }
-                      </td>
-                    ))}
-                    <td style={{ textAlign: 'center', fontWeight: 700 }}>
-                      {row.total.toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
+                {rows.map((row, idx) => {
+                  const key = `${row.cwpn}:${row.siteId}`
+                  const isExpanded = expandedItem === key
+                  const serials = serialData[key] || []
+
+                  return (
+                    <InventoryRow
+                      key={`${row.cwpn}-${row.siteId}-${row.bin}-${idx}`}
+                      row={row}
+                      isExpanded={isExpanded}
+                      serials={serials}
+                      loadingSerials={loadingSerials && isExpanded}
+                      onExpand={() => handleExpand(row.cwpn, row.siteId)}
+                      onNavigateToSite={() => navigate(`/site/${row.siteId}`)}
+                    />
+                  )
+                })}
               </tbody>
             </table>
           </div>
         )}
-        {aggregated.length > 100 && (
-          <div style={{
-            padding: '10px 16px', borderTop: '1px solid var(--border)',
-            fontSize: 12, color: 'var(--text-muted)', textAlign: 'center',
-            background: 'var(--surface-2)',
-          }}>
-            Showing 100 of {aggregated.length.toLocaleString()} rows. Use filters to narrow results.
-          </div>
-        )}
       </div>
-
-      {/* Import modal */}
-      <ImportModal
-        isOpen={importOpen}
-        onClose={() => setImportOpen(false)}
-        existingSites={sites}
-        onImportComplete={(appData) => {
-          showToast(`Imported ${appData.sites.length} sites and ${appData.skus.length} items`, 'success')
-          setImportOpen(false)
-          setTimeout(() => window.location.href = '/cw-cycle-count-v2/inventory', 1500)
-        }}
-      />
     </div>
+  )
+}
+
+function InventoryRow({ row, isExpanded, serials, loadingSerials, onExpand, onNavigateToSite }) {
+  return (
+    <>
+      <tr style={{ cursor: row.serialTracked ? 'pointer' : 'default' }}
+        onClick={row.serialTracked ? onExpand : undefined}>
+        <td style={{ textAlign: 'center', width: 30 }}>
+          {row.serialTracked && (
+            <span style={{ fontSize: 10, color: 'var(--text-muted)', transition: 'transform 0.15s', display: 'inline-block', transform: isExpanded ? 'rotate(90deg)' : 'none' }}>
+              ▶
+            </span>
+          )}
+        </td>
+        <td className="mono" style={{ fontSize: 12, fontWeight: 700 }}>{row.cwpn}</td>
+        <td className="truncate" style={{ maxWidth: 200 }}>{row.desc}</td>
+        <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>{row.typeName || row.category}</td>
+        <td>
+          <span style={{ fontWeight: 600, cursor: 'pointer', color: 'var(--cw-blue)' }}
+            onClick={e => { e.stopPropagation(); onNavigateToSite() }}>
+            {row.siteId}
+          </span>
+        </td>
+        <td>
+          <span className="badge badge-gray" style={{ fontSize: 10 }}>{formatBinLabel(row.bin)}</span>
+        </td>
+        <td style={{ textAlign: 'center', fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>
+          {row.qty}
+        </td>
+        <td style={{ textAlign: 'center' }}>
+          {row.serialTracked ? (
+            <span className="badge badge-blue" style={{ fontSize: 9 }}>SN</span>
+          ) : (
+            <span className="badge badge-gray" style={{ fontSize: 9 }}>QTY</span>
+          )}
+        </td>
+      </tr>
+
+      {/* Expanded serial rows */}
+      {isExpanded && row.serialTracked && (
+        <tr>
+          <td colSpan={8} style={{ padding: 0, background: 'var(--surface-2)' }}>
+            <div style={{ padding: '8px 16px 8px 46px' }}>
+              {loadingSerials ? (
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', padding: 8 }}>Loading serial numbers...</div>
+              ) : serials.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', padding: 8 }}>
+                  No serial numbers imported for this item at this site.
+                  Import a serial number CSV to populate this data.
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                    {serials.length} serial number{serials.length !== 1 ? 's' : ''} registered
+                  </div>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                    gap: 4,
+                    maxHeight: 200,
+                    overflowY: 'auto',
+                  }}>
+                    {serials.map((s, i) => (
+                      <div key={s.serial || i} style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '4px 8px',
+                        borderRadius: 'var(--r-sm)',
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        fontSize: 11,
+                      }}>
+                        <span style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                          flex: 1,
+                        }}>
+                          {s.serial}
+                        </span>
+                        {s.bin && (
+                          <span className="badge badge-gray" style={{ fontSize: 8 }}>
+                            {formatBinLabel(s.bin)}
+                          </span>
+                        )}
+                        {s.lastSeenAt && (
+                          <span style={{ fontSize: 9, color: 'var(--green-text)' }}>
+                            Seen {new Date(s.lastSeenAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                          </span>
+                        )}
+                        {s.discoveredDuringCount && (
+                          <span className="badge badge-amber" style={{ fontSize: 8 }}>New</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   )
 }

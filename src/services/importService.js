@@ -1,12 +1,10 @@
 /**
  * importService.js
  * ─────────────────────────────────────────────────────────────────
- * Parses NetSuite inventory balance CSV exports, normalizes the
- * messy data into our clean model:
- *   - Location → physical site mapping (entity consolidation)
- *   - Bin normalization (site-code-bins → real bins)
- *   - Spares location decomposition
- *   - Data validation and summary
+ * Parses NetSuite inventory balance CSV exports.
+ * Handles two import types:
+ *   1. Inventory balance (quantities per site/bin)
+ *   2. Serial number registry (individual serial numbers per item/site)
  *
  * The NetSuite export has three structures mashed together:
  *   1. Site-level inventory (clean: NO-OVO01 → Stored, RMA_Pending)
@@ -101,7 +99,7 @@ function classifyLocation(location) {
     return { type: 'spares', region: countryMatch?.[1]?.toUpperCase() || 'UNKNOWN' }
   }
 
-  if (/3pl|1pl|arvato|grapevine|schertz|dalton|murphy|springfield|sunnyvale|newcastle|wolfforth|austin/i.test(location)) {
+  if (/3pl|1pl|arvato|grapevine|schertz|dalton|murphy|springfield|sunnyvale|newcastle|wolfforth|austin|denton|expeditors|myriad/i.test(location)) {
     return { type: 'warehouse', name: location }
   }
 
@@ -161,13 +159,159 @@ function normalizeBin(rawBin) {
 }
 
 
-// ── MAIN IMPORT FUNCTION ──────────────────────────────────────────
+// ── DETECT IMPORT TYPE ────────────────────────────────────────────
+
+export function detectImportType(headers) {
+  const hasInventoryNumber = headers.includes('Inventory Number')
+  const hasIsSerialized = headers.includes('Is Serialized Item')
+  const hasSumOnHand = headers.includes('Sum of On Hand')
+
+  if (hasInventoryNumber && hasIsSerialized) return 'serial'
+  if (hasSumOnHand) return 'balance'
+  return 'unknown'
+}
+
+
+// ── SERIAL NUMBER IMPORT ──────────────────────────────────────────
+
+export function processSerialImport(csvText) {
+  const { headers, rows } = parseCSV(csvText)
+
+  if (!rows.length) {
+    return { success: false, error: 'No data rows found in CSV', data: null }
+  }
+
+  const required = ['Item', 'Location', 'Inventory Number']
+  const missing = required.filter(r => !headers.includes(r))
+  if (missing.length) {
+    return { success: false, error: `Missing columns: ${missing.join(', ')}`, data: null }
+  }
+
+  const serialsBySite = {}
+  const unmapped = []
+  let totalProcessed = 0
+
+  rows.forEach((row, idx) => {
+    const item = row['Item']
+    const location = row['Location']
+    const rawBin = row['Bin Number'] || ''
+    const serial = row['Inventory Number']?.trim()
+    const description = row['Description'] || ''
+    const category = row['Category'] || ''
+    const assetType = row['NetAsset Asset Type'] || ''
+    const onHand = parseInt(row['On Hand']) || 0
+
+    if (!serial || onHand <= 0) return
+    totalProcessed++
+
+    const locInfo = classifyLocation(location)
+    const binInfo = normalizeBin(rawBin)
+
+    let targetSiteId = null
+
+    if (locInfo.type === 'site') {
+      targetSiteId = locInfo.siteId
+    } else if (locInfo.type === 'spares' && binInfo.targetSite) {
+      targetSiteId = binInfo.targetSite
+    } else if (locInfo.type === 'warehouse') {
+      targetSiteId = `WH-${location.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12)}`
+    } else {
+      unmapped.push({ row: idx + 2, item, location, serial, reason: 'Unrecognized location' })
+      return
+    }
+
+    if (!serialsBySite[targetSiteId]) {
+      serialsBySite[targetSiteId] = { siteId: targetSiteId, items: {} }
+    }
+
+    const site = serialsBySite[targetSiteId]
+    if (!site.items[item]) {
+      site.items[item] = {
+        cwpn: item,
+        description,
+        category,
+        assetType,
+        serials: [],
+      }
+    }
+
+    site.items[item].serials.push({
+      serial,
+      bin: binInfo.bin,
+      location: location,
+    })
+  })
+
+  const sites = Object.values(serialsBySite).sort((a, b) =>
+    Object.values(b.items).reduce((s, i) => s + i.serials.length, 0) -
+    Object.values(a.items).reduce((s, i) => s + i.serials.length, 0)
+  )
+
+  const dcSites = sites.filter(s => !s.siteId.startsWith('WH-'))
+  const whSites = sites.filter(s => s.siteId.startsWith('WH-'))
+  const totalSerials = sites.reduce((s, site) =>
+    s + Object.values(site.items).reduce((s2, i) => s2 + i.serials.length, 0), 0
+  )
+  const totalUniqueItems = new Set(rows.map(r => r['Item'])).size
+
+  return {
+    success: true,
+    error: null,
+    data: {
+      serialsBySite,
+      sites,
+      dcSites,
+      whSites,
+      unmapped,
+      summary: {
+        totalRows: rows.length,
+        totalProcessed,
+        totalSerials,
+        unmappedRows: unmapped.length,
+        mappedPct: Math.round(((totalProcessed - unmapped.length) / Math.max(totalProcessed, 1)) * 100),
+        dcSiteCount: dcSites.length,
+        whSiteCount: whSites.length,
+        totalUniqueItems,
+      },
+    },
+  }
+}
+
+export function convertSerialsToRegistryFormat(importData) {
+  const records = []
+  Object.values(importData.serialsBySite).forEach(site => {
+    if (site.siteId.startsWith('WH-')) return
+    Object.values(site.items).forEach(item => {
+      item.serials.forEach(s => {
+        records.push({
+          cwpn: item.cwpn,
+          serial: s.serial,
+          siteId: site.siteId,
+          bin: s.bin,
+          description: item.description,
+          category: item.category,
+          assetType: item.assetType,
+        })
+      })
+    })
+  })
+  return records
+}
+
+
+// ── MAIN INVENTORY BALANCE IMPORT ─────────────────────────────────
 
 export function processInventoryImport(csvText) {
   const { headers, rows } = parseCSV(csvText)
 
   if (!rows.length) {
     return { success: false, error: 'No data rows found in CSV', data: null }
+  }
+
+  // Auto-detect: if this is a serial export, redirect
+  const importType = detectImportType(headers)
+  if (importType === 'serial') {
+    return processSerialImport(csvText)
   }
 
   const required = ['Item', 'Location', 'Bin Number', 'Sum of On Hand']
@@ -187,7 +331,6 @@ export function processInventoryImport(csvText) {
     const category = row['Category'] || ''
     const assetType = row['NetAsset Asset Type'] || ''
     const isSerialized = row['Is Serialized Item'] === 'Yes'
-    const avgCost = parseFloat(row['Maximum of Average Cost']) || 0
 
     if (qty <= 0) return
 
@@ -215,7 +358,7 @@ export function processInventoryImport(csvText) {
     if (locInfo.entity) site.entities.add(locInfo.entity)
 
     if (!site.items[item]) {
-      site.items[item] = { cwpn: item, category, assetType, isSerialized, avgCost, bins: {} }
+      site.items[item] = { cwpn: item, category, assetType, isSerialized, bins: {} }
     }
 
     site.items[item].bins[binInfo.bin] = (site.items[item].bins[binInfo.bin] || 0) + qty

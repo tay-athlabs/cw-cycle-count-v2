@@ -2,7 +2,7 @@
  * authService.js
  * ─────────────────────────────────────────────────────────────────
  * Google OAuth helpers.
- * Auth is currently bypassed — a mock user is returned.
+ * Auth is currently bypassed — mock users are available for testing.
  * To enable real auth: set VITE_GOOGLE_CLIENT_ID in .env
  * and set BYPASS_AUTH to false.
  * ─────────────────────────────────────────────────────────────────
@@ -14,14 +14,35 @@ export const BYPASS_AUTH = true // ← set to false when client ID is ready
 
 export const ALLOWED_DOMAIN = 'coreweave.com'
 
-export const MOCK_USER = {
-  email: 'j.bakker@coreweave.com',
-  name: 'J. Bakker',
-  picture: null,
-  given_name: 'J.',
-  family_name: 'Bakker',
-  role: 'ics', // 'ics' | 'manager' | 'admin'
-}
+export const MOCK_USERS = [
+  {
+    email: 'j.bakker@coreweave.com',
+    name: 'J. Bakker',
+    picture: null,
+    given_name: 'J.',
+    family_name: 'Bakker',
+    role: 'manager',
+  },
+  {
+    email: 'a.smith@coreweave.com',
+    name: 'A. Smith',
+    picture: null,
+    given_name: 'Alex',
+    family_name: 'Smith',
+    role: 'ics',
+  },
+  {
+    email: 'm.jones@coreweave.com',
+    name: 'M. Jones',
+    picture: null,
+    given_name: 'Morgan',
+    family_name: 'Jones',
+    role: 'ics',
+  },
+]
+
+// Default mock user (first in list)
+export const MOCK_USER = MOCK_USERS[0]
 
 export function decodeCredential(credential) {
   const user = jwtDecode(credential)
