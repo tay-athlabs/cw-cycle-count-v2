@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useSessionList } from '../hooks/useSession'
 import { SessionStatus, AccuracyBadge } from '../components/Badge'
-import { changeUserRole, clearAllSessions, resetStore } from '../services/dataService'
+import { changeUserRole, clearAllSessions, resetStore, clearImportedSites } from '../services/dataService'
 import { isSuperuser } from '../services/authService'
 import { useAppContext } from '../context/AppContext'
 import {
@@ -148,6 +148,21 @@ export default function Profile() {
               }}
             >
               Clear all sessions and logs
+            </button>
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={async () => {
+                if (!window.confirm('Remove all imported sites and their associated data? Seed sites will be preserved.')) return
+                try {
+                  const result = await clearImportedSites(user)
+                  showToast(`Removed ${result.removedSites} imported sites and ${result.removedSessions} sessions`, 'warning')
+                  window.location.reload()
+                } catch (err) {
+                  showToast(`Failed: ${err.message}`, 'error')
+                }
+              }}
+            >
+              Clear imported sites
             </button>
             <button
               className="btn btn-sm btn-danger"
