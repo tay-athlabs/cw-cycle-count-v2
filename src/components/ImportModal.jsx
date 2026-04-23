@@ -75,11 +75,12 @@ export default function ImportModal({ isOpen, onClose, existingSites, onImportCo
       if (importType === 'serial') {
         const records = convertSerialsToRegistryFormat(result)
         const outcome = await importSerialRegistry(records, user)
+        const siteCount = result.dcSites?.length ?? result.sites?.length ?? 0
         onImportComplete({
           type: 'serial',
           imported: outcome.imported,
           skipped: outcome.skipped,
-          sites: result.dcSites.length,
+          sites: siteCount,
         })
         setStep(2)
       } else {
