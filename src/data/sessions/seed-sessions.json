@@ -1,0 +1,796 @@
+[
+  {
+    "id": "CC-SE-FAN01-20260401-101",
+    "siteId": "SE-FAN01",
+    "type": "full",
+    "mode": "blind",
+    "collaborative": false,
+    "status": "approved",
+    "accuracy": 97.8,
+    "createdBy": {
+      "email": "j.bakker@coreweave.com",
+      "name": "J. Bakker"
+    },
+    "createdAt": "2026-04-01T08:00:00Z",
+    "startedAt": "2026-04-01T08:05:00Z",
+    "completedAt": "2026-04-01T10:12:00Z",
+    "approvedAt": "2026-04-01T10:30:00Z",
+    "approvedBy": {
+      "email": "j.bakker@coreweave.com",
+      "name": "J. Bakker"
+    },
+    "scheduledDate": null,
+    "duration": 127,
+    "recountRequests": [],
+    "notes": "Monthly full count at Falun. Blind mode. 1 variance on fiber cables, flagged as pending transaction.",
+    "sections": {
+      "Stored": {
+        "status": "approved",
+        "claimedBy": {
+          "email": "a.smith@coreweave.com",
+          "name": "A. Smith"
+        },
+        "claimedAt": "2026-04-01T08:05:00Z",
+        "items": [
+          {
+            "cwpn": "1834560270",
+            "expected": 5,
+            "counted": 5,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560272",
+            "expected": 12,
+            "counted": 12,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560274",
+            "expected": 8,
+            "counted": 8,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560276",
+            "expected": 3,
+            "counted": 3,
+            "variance": 0,
+            "status": "matched"
+          }
+        ]
+      },
+      "Spares": {
+        "status": "approved",
+        "claimedBy": {
+          "email": "a.smith@coreweave.com",
+          "name": "A. Smith"
+        },
+        "claimedAt": "2026-04-01T08:05:00Z",
+        "items": [
+          {
+            "cwpn": "10M-12FM3-PFF-APC-B-LZ",
+            "expected": 10,
+            "counted": 10,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "10M-12FM3-PFF-APC-B-S8-LZ",
+            "expected": 5,
+            "counted": 5,
+            "variance": 0,
+            "status": "matched"
+          }
+        ]
+      },
+      "RMA_Pending": {
+        "status": "approved",
+        "claimedBy": {
+          "email": "a.smith@coreweave.com",
+          "name": "A. Smith"
+        },
+        "claimedAt": "2026-04-01T09:00:00Z",
+        "items": [
+          {
+            "cwpn": "1834560278",
+            "expected": 2,
+            "counted": 2,
+            "variance": 0,
+            "status": "matched"
+          }
+        ]
+      },
+      "Scrap_Pending": {
+        "status": "approved",
+        "claimedBy": {
+          "email": "a.smith@coreweave.com",
+          "name": "A. Smith"
+        },
+        "claimedAt": "2026-04-01T09:30:00Z",
+        "items": [
+          {
+            "cwpn": "1834560280",
+            "expected": 4,
+            "counted": 4,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560282",
+            "expected": 3,
+            "counted": 2,
+            "variance": -1,
+            "status": "variance",
+            "flag": {
+              "reason": "pending_transaction",
+              "ticket": "ICS-4521",
+              "note": "Transfer to RMA not yet processed in NS",
+              "flaggedBy": {
+                "email": "a.smith@coreweave.com",
+                "name": "A. Smith"
+              },
+              "flaggedAt": "2026-04-01T09:45:00Z"
+            }
+          }
+        ]
+      }
+    },
+    "summary": {
+      "totalItems": 9,
+      "matched": 8,
+      "variances": 1,
+      "quarantined": 0,
+      "notCounted": 0,
+      "recountsPending": 0,
+      "escalated": 0
+    }
+  },
+  {
+    "id": "CC-ES-AVQ01-20260408-201",
+    "siteId": "ES-AVQ01",
+    "type": "standard",
+    "mode": "visible",
+    "collaborative": false,
+    "status": "approved",
+    "accuracy": 91.7,
+    "createdBy": {
+      "email": "j.bakker@coreweave.com",
+      "name": "J. Bakker"
+    },
+    "createdAt": "2026-04-08T07:30:00Z",
+    "startedAt": "2026-04-08T07:35:00Z",
+    "completedAt": "2026-04-08T09:10:00Z",
+    "approvedAt": "2026-04-08T09:25:00Z",
+    "approvedBy": {
+      "email": "j.bakker@coreweave.com",
+      "name": "J. Bakker"
+    },
+    "scheduledDate": null,
+    "duration": 95,
+    "recountRequests": [],
+    "notes": "Weekly standard count at Sevilla. One variance on GPUs.",
+    "sections": {
+      "Stored": {
+        "status": "approved",
+        "claimedBy": {
+          "email": "m.jones@coreweave.com",
+          "name": "M. Jones"
+        },
+        "claimedAt": "2026-04-08T07:35:00Z",
+        "items": [
+          {
+            "cwpn": "1834560270",
+            "expected": 12,
+            "counted": 12,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560272",
+            "expected": 30,
+            "counted": 30,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560274",
+            "expected": 18,
+            "counted": 18,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560276",
+            "expected": 8,
+            "counted": 8,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560278",
+            "expected": 45,
+            "counted": 45,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560280",
+            "expected": 22,
+            "counted": 22,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560282",
+            "expected": 15,
+            "counted": 15,
+            "variance": 0,
+            "status": "matched"
+          }
+        ]
+      },
+      "Spares": {
+        "status": "approved",
+        "claimedBy": {
+          "email": "m.jones@coreweave.com",
+          "name": "M. Jones"
+        },
+        "claimedAt": "2026-04-08T08:15:00Z",
+        "items": [
+          {
+            "cwpn": "10M-12FM3-PFF-APC-B-LZ",
+            "expected": 20,
+            "counted": 20,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "10M-12FM3-PFF-APC-B-S8-LZ",
+            "expected": 8,
+            "counted": 8,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560270",
+            "expected": 6,
+            "counted": 5,
+            "variance": -1,
+            "status": "variance",
+            "flag": {
+              "reason": "missing",
+              "ticket": "ICS-4602",
+              "note": "1 unit missing from spares cage, possible mislocation",
+              "flaggedBy": {
+                "email": "m.jones@coreweave.com",
+                "name": "M. Jones"
+              },
+              "flaggedAt": "2026-04-08T08:40:00Z"
+            }
+          }
+        ]
+      },
+      "In Process": {
+        "status": "approved",
+        "claimedBy": {
+          "email": "m.jones@coreweave.com",
+          "name": "M. Jones"
+        },
+        "claimedAt": "2026-04-08T08:50:00Z",
+        "items": [
+          {
+            "cwpn": "1834560274",
+            "expected": 3,
+            "counted": 3,
+            "variance": 0,
+            "status": "matched"
+          }
+        ]
+      }
+    },
+    "summary": {
+      "totalItems": 11,
+      "matched": 10,
+      "variances": 1,
+      "quarantined": 0,
+      "notCounted": 0,
+      "recountsPending": 0,
+      "escalated": 0
+    }
+  },
+  {
+    "id": "CC-GB-CWY01-20260315-301",
+    "siteId": "GB-CWY01",
+    "type": "standard",
+    "mode": "blind",
+    "collaborative": true,
+    "status": "approved",
+    "accuracy": 100.0,
+    "createdBy": {
+      "email": "j.bakker@coreweave.com",
+      "name": "J. Bakker"
+    },
+    "createdAt": "2026-03-15T09:00:00Z",
+    "startedAt": "2026-03-15T09:05:00Z",
+    "completedAt": "2026-03-15T10:30:00Z",
+    "approvedAt": "2026-03-15T10:45:00Z",
+    "approvedBy": {
+      "email": "j.bakker@coreweave.com",
+      "name": "J. Bakker"
+    },
+    "joinCode": "CWY-A3F2",
+    "scheduledDate": null,
+    "duration": 85,
+    "recountRequests": [],
+    "notes": "Collaborative blind count at Crawley. Two technicians, perfect accuracy.",
+    "sections": {
+      "Stored": {
+        "status": "approved",
+        "claimedBy": {
+          "email": "a.smith@coreweave.com",
+          "name": "A. Smith"
+        },
+        "claimedAt": "2026-03-15T09:05:00Z",
+        "items": [
+          {
+            "cwpn": "1834560270",
+            "expected": 8,
+            "counted": 8,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560272",
+            "expected": 15,
+            "counted": 15,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560274",
+            "expected": 6,
+            "counted": 6,
+            "variance": 0,
+            "status": "matched"
+          }
+        ]
+      },
+      "Spares": {
+        "status": "approved",
+        "claimedBy": {
+          "email": "m.jones@coreweave.com",
+          "name": "M. Jones"
+        },
+        "claimedAt": "2026-03-15T09:10:00Z",
+        "items": [
+          {
+            "cwpn": "10M-12FM3-PFF-APC-B-LZ",
+            "expected": 12,
+            "counted": 12,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560278",
+            "expected": 4,
+            "counted": 4,
+            "variance": 0,
+            "status": "matched"
+          }
+        ]
+      }
+    },
+    "summary": {
+      "totalItems": 5,
+      "matched": 5,
+      "variances": 0,
+      "quarantined": 0,
+      "notCounted": 0,
+      "recountsPending": 0,
+      "escalated": 0
+    }
+  },
+  {
+    "id": "CC-ES-BCN03-20260421-401",
+    "siteId": "ES-BCN03",
+    "type": "standard",
+    "mode": "visible",
+    "collaborative": false,
+    "status": "pending_review",
+    "accuracy": 85.7,
+    "createdBy": {
+      "email": "j.bakker@coreweave.com",
+      "name": "J. Bakker"
+    },
+    "createdAt": "2026-04-21T06:45:00Z",
+    "startedAt": "2026-04-21T06:50:00Z",
+    "completedAt": "2026-04-21T08:20:00Z",
+    "approvedAt": null,
+    "approvedBy": null,
+    "scheduledDate": null,
+    "duration": 90,
+    "recountRequests": [],
+    "notes": "Weekly count BCN03. Two variances flagged, one escalated for manager review.",
+    "sections": {
+      "Stored": {
+        "status": "completed",
+        "claimedBy": {
+          "email": "a.smith@coreweave.com",
+          "name": "A. Smith"
+        },
+        "claimedAt": "2026-04-21T06:50:00Z",
+        "items": [
+          {
+            "cwpn": "1834560270",
+            "expected": 10,
+            "counted": 10,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560272",
+            "expected": 25,
+            "counted": 25,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560274",
+            "expected": 14,
+            "counted": 14,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560276",
+            "expected": 7,
+            "counted": 5,
+            "variance": -2,
+            "status": "escalated",
+            "escalation": {
+              "escalatedBy": {
+                "email": "a.smith@coreweave.com",
+                "name": "A. Smith"
+              },
+              "escalatedAt": "2026-04-21T08:00:00Z",
+              "reason": "Variance persists after recount. 2 units unaccounted for.",
+              "resolvedBy": null,
+              "resolvedAt": null,
+              "resolution": null
+            },
+            "countHistory": [
+              {
+                "round": 1,
+                "counted": 5,
+                "countedBy": {
+                  "email": "a.smith@coreweave.com",
+                  "name": "A. Smith"
+                }
+              },
+              {
+                "round": 2,
+                "counted": 5,
+                "countedBy": {
+                  "email": "m.jones@coreweave.com",
+                  "name": "M. Jones"
+                }
+              }
+            ]
+          },
+          {
+            "cwpn": "1834560278",
+            "expected": 20,
+            "counted": 20,
+            "variance": 0,
+            "status": "matched"
+          }
+        ]
+      },
+      "Spares": {
+        "status": "completed",
+        "claimedBy": {
+          "email": "a.smith@coreweave.com",
+          "name": "A. Smith"
+        },
+        "claimedAt": "2026-04-21T07:30:00Z",
+        "items": [
+          {
+            "cwpn": "10M-12FM3-PFF-APC-B-LZ",
+            "expected": 15,
+            "counted": 14,
+            "variance": -1,
+            "status": "variance",
+            "flag": {
+              "reason": "wrong_location",
+              "ticket": "ICS-4710",
+              "note": "Found in Stored bin instead of Spares",
+              "flaggedBy": {
+                "email": "a.smith@coreweave.com",
+                "name": "A. Smith"
+              },
+              "flaggedAt": "2026-04-21T07:50:00Z"
+            }
+          },
+          {
+            "cwpn": "1834560282",
+            "expected": 8,
+            "counted": 8,
+            "variance": 0,
+            "status": "matched"
+          }
+        ]
+      }
+    },
+    "summary": {
+      "totalItems": 7,
+      "matched": 5,
+      "variances": 1,
+      "quarantined": 0,
+      "notCounted": 0,
+      "recountsPending": 0,
+      "escalated": 1
+    }
+  },
+  {
+    "id": "CC-DK-SVL01-20260423-501",
+    "siteId": "DK-SVL01",
+    "type": "quick",
+    "mode": "visible",
+    "collaborative": false,
+    "status": "in_progress",
+    "accuracy": null,
+    "createdBy": {
+      "email": "j.bakker@coreweave.com",
+      "name": "J. Bakker"
+    },
+    "createdAt": "2026-04-23T07:00:00Z",
+    "startedAt": "2026-04-23T07:05:00Z",
+    "completedAt": null,
+    "approvedAt": null,
+    "approvedBy": null,
+    "scheduledDate": null,
+    "duration": null,
+    "recountRequests": [],
+    "notes": null,
+    "sections": {
+      "Stored": {
+        "status": "in_progress",
+        "claimedBy": {
+          "email": "a.smith@coreweave.com",
+          "name": "A. Smith"
+        },
+        "claimedAt": "2026-04-23T07:05:00Z",
+        "items": [
+          {
+            "cwpn": "1834560270",
+            "expected": 3,
+            "counted": 3,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560272",
+            "expected": 7,
+            "counted": "",
+            "variance": null,
+            "status": "pending"
+          },
+          {
+            "cwpn": "1834560274",
+            "expected": 2,
+            "counted": "",
+            "variance": null,
+            "status": "pending"
+          }
+        ]
+      }
+    },
+    "summary": {
+      "totalItems": 3,
+      "matched": 1,
+      "variances": 0,
+      "quarantined": 0,
+      "notCounted": 2,
+      "recountsPending": 0,
+      "escalated": 0
+    }
+  },
+  {
+    "id": "CC-SE-FAN01-20260301-601",
+    "siteId": "SE-FAN01",
+    "type": "standard",
+    "mode": "visible",
+    "collaborative": false,
+    "status": "approved",
+    "accuracy": 87.5,
+    "createdBy": {
+      "email": "j.bakker@coreweave.com",
+      "name": "J. Bakker"
+    },
+    "createdAt": "2026-03-01T08:00:00Z",
+    "startedAt": "2026-03-01T08:10:00Z",
+    "completedAt": "2026-03-01T10:45:00Z",
+    "approvedAt": "2026-03-01T11:00:00Z",
+    "approvedBy": {
+      "email": "j.bakker@coreweave.com",
+      "name": "J. Bakker"
+    },
+    "scheduledDate": null,
+    "duration": 155,
+    "recountRequests": [],
+    "notes": "March standard count at Falun. Accuracy below target, cable discrepancies.",
+    "sections": {
+      "Stored": {
+        "status": "approved",
+        "claimedBy": {
+          "email": "m.jones@coreweave.com",
+          "name": "M. Jones"
+        },
+        "claimedAt": "2026-03-01T08:10:00Z",
+        "items": [
+          {
+            "cwpn": "1834560270",
+            "expected": 5,
+            "counted": 5,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560272",
+            "expected": 10,
+            "counted": 10,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560274",
+            "expected": 8,
+            "counted": 7,
+            "variance": -1,
+            "status": "variance",
+            "flag": {
+              "reason": "missing",
+              "ticket": "ICS-4201",
+              "note": "1 cable missing from shelf B3",
+              "flaggedBy": {
+                "email": "m.jones@coreweave.com",
+                "name": "M. Jones"
+              },
+              "flaggedAt": "2026-03-01T09:15:00Z"
+            }
+          },
+          {
+            "cwpn": "1834560276",
+            "expected": 3,
+            "counted": 3,
+            "variance": 0,
+            "status": "matched"
+          }
+        ]
+      },
+      "Spares": {
+        "status": "approved",
+        "claimedBy": {
+          "email": "m.jones@coreweave.com",
+          "name": "M. Jones"
+        },
+        "claimedAt": "2026-03-01T09:30:00Z",
+        "items": [
+          {
+            "cwpn": "10M-12FM3-PFF-APC-B-LZ",
+            "expected": 10,
+            "counted": 10,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "10M-12FM3-PFF-APC-B-S8-LZ",
+            "expected": 5,
+            "counted": 5,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560278",
+            "expected": 4,
+            "counted": 4,
+            "variance": 0,
+            "status": "matched"
+          },
+          {
+            "cwpn": "1834560282",
+            "expected": 6,
+            "counted": 5,
+            "variance": -1,
+            "status": "variance",
+            "flag": {
+              "reason": "pending_transaction",
+              "ticket": "ICS-4203",
+              "note": "RMA transfer pending in NS",
+              "flaggedBy": {
+                "email": "m.jones@coreweave.com",
+                "name": "M. Jones"
+              },
+              "flaggedAt": "2026-03-01T10:00:00Z"
+            }
+          }
+        ]
+      }
+    },
+    "summary": {
+      "totalItems": 8,
+      "matched": 6,
+      "variances": 2,
+      "quarantined": 0,
+      "notCounted": 0,
+      "recountsPending": 0,
+      "escalated": 0
+    }
+  },
+  {
+    "id": "CC-GB-CWY01-20260430-701",
+    "siteId": "GB-CWY01",
+    "type": "wall_to_wall",
+    "mode": "blind",
+    "collaborative": true,
+    "status": "scheduled",
+    "accuracy": null,
+    "createdBy": {
+      "email": "j.bakker@coreweave.com",
+      "name": "J. Bakker"
+    },
+    "createdAt": "2026-04-22T14:00:00Z",
+    "startedAt": null,
+    "completedAt": null,
+    "approvedAt": null,
+    "approvedBy": null,
+    "scheduledDate": "2026-04-30T08:00:00Z",
+    "duration": null,
+    "recountRequests": [],
+    "notes": "Scheduled W2W count for Crawley. Blind mode enforced.",
+    "sections": {
+      "Stored": {
+        "status": "open",
+        "claimedBy": null,
+        "claimedAt": null,
+        "items": []
+      },
+      "Spares": {
+        "status": "open",
+        "claimedBy": null,
+        "claimedAt": null,
+        "items": []
+      },
+      "RMA_Pending": {
+        "status": "open",
+        "claimedBy": null,
+        "claimedAt": null,
+        "items": []
+      },
+      "RMA_Vendor": {
+        "status": "open",
+        "claimedBy": null,
+        "claimedAt": null,
+        "items": []
+      },
+      "Scrap_Pending": {
+        "status": "open",
+        "claimedBy": null,
+        "claimedAt": null,
+        "items": []
+      }
+    },
+    "summary": {
+      "totalItems": 0,
+      "matched": 0,
+      "variances": 0,
+      "quarantined": 0,
+      "notCounted": 0,
+      "recountsPending": 0,
+      "escalated": 0
+    }
+  }
+]
