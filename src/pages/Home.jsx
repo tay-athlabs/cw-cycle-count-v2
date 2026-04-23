@@ -191,9 +191,11 @@ export default function Home() {
         onClose={() => setImportOpen(false)}
         existingSites={sites}
         onImportComplete={(appData) => {
-          showToast(`Imported ${appData.sites.length} sites and ${appData.skus.length} items`, 'success')
+          const msg = appData.type === 'serial'
+            ? `Imported ${appData.imported} serial numbers across ${appData.sites} sites`
+            : `Imported ${appData.sites} sites and ${appData.skus} items`
+          showToast(msg, 'success')
           setImportOpen(false)
-          // Reload to pick up fresh data from localStorage
           setTimeout(() => window.location.href = '/cw-cycle-count-v2/', 1500)
         }}
       />
