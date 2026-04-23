@@ -236,14 +236,31 @@ function CountRow({
       <td style={{ fontWeight: 500, maxWidth: 200 }} className="truncate">
         {item.desc}
         {item.flag && (
-          <div style={{ marginTop: 3 }}>
-            <span className="badge badge-purple" style={{ fontSize: 9 }}>
-              {reasonLabel || item.flag.reason}
-            </span>
-            {item.flag.ticket && (
-              <span className="badge badge-blue" style={{ fontSize: 9, marginLeft: 4 }}>
-                {item.flag.ticket}
+          <div style={{ marginTop: 4, padding: '6px 8px', background: 'var(--purple-light)', borderRadius: 'var(--r-sm)', border: '1px solid rgba(127,86,217,.2)' }}>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="badge badge-purple" style={{ fontSize: 9 }}>
+                {reasonLabel || item.flag.reason}
               </span>
+              {item.flag.ticket && (
+                <span className="badge badge-blue" style={{ fontSize: 9 }}>
+                  {item.flag.ticket}
+                </span>
+              )}
+              {item.flag.flaggedBy && (
+                <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                  by {item.flag.flaggedBy.name}
+                </span>
+              )}
+              {item.flag.flaggedAt && (
+                <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                  {new Date(item.flag.flaggedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              )}
+            </div>
+            {item.flag.note && (
+              <div style={{ fontSize: 10, color: 'var(--purple-text)', marginTop: 3, fontStyle: 'italic', lineHeight: 1.4 }}>
+                "{item.flag.note}"
+              </div>
             )}
           </div>
         )}
