@@ -791,6 +791,42 @@ export async function resetStore(userInfo) {
 
 // ── ESCALATION RESOLUTION ─────────────────────────────────────────
 
+export async function clearImportedSites(userInfo) {
+  const store = getStore()
+  const seedSiteIds = sitesData.map(s => s.id)
+
+  const removedSites = store.sites.filter(s => !seedSiteIds.includes(s.id))
+  store.sites = store.sites.filter(s => seedSiteIds.includes(s.id))
+
+  const removedIds = new Set(removedSites.map(s => s.id))
+  store.skus.forEach(sku => {
+    if (sku.inventory) {
+      Object.keys(sku.inventory).forEach(siteId => {
+        if (removedIds.has(siteId)) delete sku.inventory[siteId]
+      })
+    }
+  })
+
+  const removedSessionCount = store.sessions.filter(s => removedIds.has(s.siteId)).length
+  store.sessions = store.sessions.filter(s => !removedIds.has(s.siteId))
+
+  Object.keys(store.serialRegistry || {}).forEach(key => {
+    const parts = key.split(':')
+    if (parts.length > 1 && removedIds.has(parts[1])) delete store.serialRegistry[key]
+  })
+
+  saveStore(store)
+  await logAudit('imported_sites_cleared', {
+    removedSites: removedSites.map(s => s.id),
+    removedCount: removedSites.length,
+    removedSessionCount,
+  }, userInfo)
+
+  return { removedSites: removedSites.length, removedSessions: removedSessionCount }
+}
+
+// ── ESCALATION RESOLUTION (CONTD) ────────────────────────────────
+
 export async function resolveEscalation(sessionId, sectionKey, cwpn, resolution, resolvedBy) {
   const store = getStore()
   const idx = store.sessions.findIndex(s => s.id === sessionId)
