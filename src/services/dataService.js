@@ -10,7 +10,7 @@
 
 import sitesData from '../data/sites.json'
 import skusData from '../data/skus.json'
-import exampleSession from '../data/sessions/example.json'
+import seedSessions from '../data/sessions/seed-sessions.json'
 
 const STORAGE_KEY = 'cw_cycle_count_data'
 
@@ -25,7 +25,7 @@ function getStore() {
   const initial = {
     sites: sitesData,
     skus: skusData,
-    sessions: [exampleSession],
+    sessions: seedSessions,
     auditLog: [],
     serialRegistry: {},
   }
@@ -780,7 +780,7 @@ export async function resetStore(userInfo) {
   const initial = {
     sites: (await import('../data/sites.json')).default,
     skus: (await import('../data/skus.json')).default,
-    sessions: [(await import('../data/sessions/example.json')).default],
+    sessions: (await import('../data/sessions/seed-sessions.json')).default,
     auditLog: [],
     serialRegistry: {},
   }
