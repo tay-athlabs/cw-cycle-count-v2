@@ -211,16 +211,20 @@ export function useCountItems({
     })
   }, [items, itemFlags, selfRecounted, currentUser])
 
-  // Auto-save with debounce
+  // Keep a ref to the latest buildSavePayload so timeouts never use stale closures
+  const buildSavePayloadRef = useRef(buildSavePayload)
+  buildSavePayloadRef.current = buildSavePayload
+
+  // Auto-save with debounce — always uses latest payload via ref
   const scheduleAutoSave = useCallback(() => {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
       if (isReadOnly || !activeSection) return
-      const payload = buildSavePayload()
+      const payload = buildSavePayloadRef.current()
       await saveItems(activeSection, payload)
       setDirty(false)
     }, AUTO_SAVE_DELAY_MS)
-  }, [isReadOnly, activeSection, buildSavePayload, saveItems])
+  }, [isReadOnly, activeSection, saveItems])
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -309,13 +313,13 @@ export function useCountItems({
     scheduleAutoSave()
   }, [scheduleAutoSave])
 
-  // Manual save (flush)
+  // Manual save (flush) — also uses ref for latest payload
   const flushSave = useCallback(async () => {
     if (!activeSection) return
-    const payload = buildSavePayload()
+    const payload = buildSavePayloadRef.current()
     await saveItems(activeSection, payload)
     setDirty(false)
-  }, [activeSection, buildSavePayload, saveItems])
+  }, [activeSection, saveItems])
 
   return {
     items,

@@ -20,6 +20,7 @@ import { useSKUs } from '../hooks/useInventory'
 import { useCountItems } from '../hooks/useCountItems'
 import { useAuth } from '../context/AuthContext'
 import { isManager } from '../services/authService'
+import { logAudit } from '../services/dataService'
 import { SessionStatus } from '../components/Badge'
 import StatCard from '../components/StatCard'
 import ScanBar from '../components/ScanBar'
@@ -109,6 +110,14 @@ export default function CountSession() {
 
   const handleFlagSubmit = (cwpn, flagData) => {
     setFlag(cwpn, flagData)
+    logAudit('item_flagged', {
+      sessionId,
+      sectionKey: activeSection,
+      cwpn,
+      reason: flagData.reason,
+      ticket: flagData.ticket || null,
+      note: flagData.note || null,
+    }, user)
   }
 
   const handleReject = async () => {
